@@ -11,8 +11,9 @@
         <h1 class="fade-in">Sua gestão de restaurante simplificada</h1>
         <p class="hero-subtitle slide-up delay-1">A solução completa para gerenciar seu restaurante de forma eficiente e aumentar suas vendas</p>
         <div class="hero-buttons slide-up delay-2">
-          <button class="btn btn-primary">Comece Agora</button>
-          <button class="btn btn-outline">Agendar Demonstração</button>
+          <button @click="startTrial" class="btn btn-primary">Comece Agora</button>
+          <button @click="scheduleDemo" class="btn btn-outline">Agendar Demonstração</button>
+          <router-link to="/auth/login" class="btn btn-secondary">Entrar</router-link>
         </div>
       </div>
       <div class="hero-image">
@@ -285,6 +286,7 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue';
 import { useHead } from '@vueuse/head';
+import { useRouter } from 'vue-router';
 import MainHeader from '@/components/layout/MainHeader.vue';
 
 export default defineComponent({
@@ -293,6 +295,7 @@ export default defineComponent({
     MainHeader
   },
   setup() {
+    const router = useRouter();
     const currentYear = new Date().getFullYear();
     const newsletterEmail = ref('');
     
@@ -327,11 +330,26 @@ export default defineComponent({
       alert('Obrigado por se inscrever em nossa newsletter!');
     };
 
+    const startTrial = () => {
+      // Redireciona para a página de cadastro
+      router.push('/auth/register');
+    };
+
+    const scheduleDemo = () => {
+      // Aqui você pode abrir um modal ou redirecionar para uma página de agendamento
+      const whatsappNumber = '5511999999999';
+      const message = 'Olá! Gostaria de agendar uma demonstração do RestaurantPro.';
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+    };
+
     return {
       currentYear,
       newsletterEmail,
       testimonials,
-      subscribeNewsletter
+      subscribeNewsletter,
+      startTrial,
+      scheduleDemo
     };
   }
 });
@@ -437,6 +455,18 @@ section {
 .btn-outline:hover {
   background-color: var(--bg-hover);
   transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: white;
+  border-color: var(--secondary);
+}
+
+.btn-secondary:hover {
+  background-color: #d97706;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
 }
 
 /* ====================================

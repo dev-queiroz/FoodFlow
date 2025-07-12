@@ -243,7 +243,7 @@ export default defineComponent({
     
     const logout = () => {
       // Implementar lógica de logout
-      router.push('/login');
+      router.push('/auth/login');
     };
     
     const resetFilters = () => {

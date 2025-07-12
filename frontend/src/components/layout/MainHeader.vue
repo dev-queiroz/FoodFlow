@@ -41,10 +41,25 @@
             </span>
           </button>
 
-          <!-- Botão de Login -->
-          <router-link to="/login" class="btn btn-outline btn-sm">
-            Entrar
-          </router-link>
+          <!-- Botões de Autenticação -->
+          <div v-if="!isAuthenticated" class="auth-buttons gap-2 flex">
+  <router-link to="/auth/login" class="btn btn-outline btn-auth">
+    <i class="fas fa-sign-in-alt"></i>
+    Entrar
+  </router-link>
+  <router-link to="/auth/register" class="btn btn-primary btn-auth">
+    <i class="fas fa-user-plus"></i>
+    Cadastrar
+  </router-link>
+</div>
+
+          <!-- Menu do usuário autenticado -->
+          <div v-else class="user-menu">
+            <span class="user-greeting">Olá, {{ userName }}!</span>
+            <button @click="logout" class="btn btn-outline btn-sm">
+              Sair
+            </button>
+          </div>
 
           <!-- Botão de Menu Mobile -->
           <button 
@@ -75,14 +90,28 @@
               {{ item.label }}
             </a>
           </li>
-          <li>
-            <router-link 
-              to="/login" 
-              class="mobile-nav-link"
-              @click="closeMobileMenu"
-            >
-              Entrar
-            </router-link>
+          <li v-if="!isAuthenticated" class="mobile-auth-group flex gap-2 px-4 py-2">
+  <router-link 
+    to="/auth/login" 
+    class="btn btn-outline btn-auth w-full"
+    @click="closeMobileMenu"
+  >
+    <i class="fas fa-sign-in-alt"></i>
+    Entrar
+  </router-link>
+  <router-link 
+    to="/auth/register" 
+    class="btn btn-primary btn-auth w-full"
+    @click="closeMobileMenu"
+  >
+    <i class="fas fa-user-plus"></i>
+    Cadastrar
+  </router-link>
+</li>
+          <li v-if="isAuthenticated">
+            <button @click="logout" class="mobile-nav-link logout-btn">
+              Sair
+            </button>
           </li>
         </ul>
       </div>
@@ -92,14 +121,25 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, onUnmounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useTheme } from '@/composables/useTheme';
 
 export default defineComponent({
   name: 'MainHeader',
   setup() {
+    const router = useRouter();
     const { isDark, toggleTheme } = useTheme();
     const isMobileMenuOpen = ref(false);
     const isScrolled = ref(false);
+
+    // Estado de autenticação
+    const isAuthenticated = computed(() => {
+      return localStorage.getItem('isAuthenticated') === 'true';
+    });
+
+    const userName = computed(() => {
+      return localStorage.getItem('userName') || 'Usuário';
+    });
 
     const navItems = [
       { label: 'Início', path: '#inicio' },
@@ -133,6 +173,16 @@ export default defineComponent({
       isScrolled.value = window.scrollY > 10;
     };
 
+    const logout = () => {
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('restaurantName');
+      
+      closeMobileMenu();
+      router.push('/');
+    };
+
     onMounted(() => {
       window.addEventListener('scroll', handleScroll);
     });
@@ -147,10 +197,13 @@ export default defineComponent({
       isScrolled,
       isMobileMenuOpen,
       navItems,
+      isAuthenticated,
+      userName,
       toggleTheme,
       toggleMobileMenu,
       closeMobileMenu,
-      scrollToSection
+      scrollToSection,
+      logout
     };
   },
 });
@@ -390,6 +443,54 @@ export default defineComponent({
   
   .logo-icon {
     font-size: 1.5rem;
+  }
+}
+.btn-auth {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  font-size: 1rem;
+  transition: all 0.2s;
+  box-shadow: 0 1px 5px rgba(102, 126, 234, 0.07);
+}
+.btn-auth i {
+  font-size: 1.1rem;
+}
+.btn-outline.btn-auth {
+  border: 2px solid var(--primary, #667eea);
+  color: var(--primary, #667eea);
+  background: #fff;
+}
+.btn-outline.btn-auth:hover {
+  background: var(--primary, #667eea);
+  color: #fff;
+}
+.btn-primary.btn-auth {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+}
+.btn-primary.btn-auth:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 2px 12px rgba(118, 75, 162, 0.13);
+}
+@media (max-width: 1024px) {
+  .auth-buttons {
+    display: none !important;
+  }
+  .mobile-auth-group {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0.5rem 0;
+  }
+}
+@media (max-width: 640px) {
+  .btn-auth {
+    font-size: 0.95rem;
+    padding: 0.6rem 1rem;
   }
 }
 </style>
