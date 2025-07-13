@@ -278,13 +278,13 @@
 <script lang="ts">
 import { defineComponent, ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useNotification } from '@/composables/useNotification';
+
 
 export default defineComponent({
   name: 'RegisterView',
   setup() {
     const router = useRouter();
-    const { showNotification } = useNotification();
+
 
     const isLoading = ref(false);
     const showPassword = ref(false);
@@ -402,7 +402,7 @@ export default defineComponent({
         // Simular registro - substituir por chamada real à API
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        showNotification('Conta criada com sucesso! Bem-vindo ao RestaurantPro!', 'success');
+        // Notificação removida ('Conta criada com sucesso! Bem-vindo ao RestaurantPro!', 'success');
         
         // Salvar dados de autenticação (substituir por implementação real)
         localStorage.setItem('isAuthenticated', 'true');
@@ -413,7 +413,7 @@ export default defineComponent({
         // Redirecionar para o dashboard
         router.push('/admin');
       } catch (error) {
-        showNotification('Erro ao criar conta. Tente novamente.', 'error');
+        // Notificação removida ('Erro ao criar conta. Tente novamente.', 'error');
       } finally {
         isLoading.value = false;
       }
@@ -424,10 +424,10 @@ export default defineComponent({
       
       try {
         // Simular registro com Google - aqui você implementaria a integração real
-        showNotification('Conectando com Google...', 'info');
+        // Notificação removida ('Conectando com Google...', 'info');
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        showNotification('Conta criada com Google com sucesso!', 'success');
+        // Notificação removida ('Conta criada com Google com sucesso!', 'success');
         
         // Simular dados do usuário do Google
         localStorage.setItem('isAuthenticated', 'true');
@@ -437,7 +437,7 @@ export default defineComponent({
 
         router.push('/admin');
       } catch (error) {
-        showNotification('Erro ao criar conta com Google. Tente novamente.', 'error');
+        // Notificação removida ('Erro ao criar conta com Google. Tente novamente.', 'error');
       } finally {
         isLoading.value = false;
       }
@@ -461,7 +461,7 @@ export default defineComponent({
     };
 
     // Watch para formatar telefone
-    const phoneInput = ref<HTMLInputElement>();
+
     const handlePhoneInput = () => {
       form.phone = formatPhone(form.phone);
     };

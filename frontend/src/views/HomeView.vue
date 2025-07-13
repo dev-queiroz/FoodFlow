@@ -2,7 +2,6 @@
   <div class="home-view">
     <!-- Cabeçalho -->
     <MainHeader />
-    
     <!-- Conteúdo Principal -->
     <main class="main-content">
       <!-- Seção Hero -->
@@ -284,14 +283,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue';
-import { useHead } from '@vueuse/head';
-import { useRouter } from 'vue-router';
+import { defineComponent, ref } from 'vue';
 import MainHeader from '@/components/layout/MainHeader.vue';
+import { useRouter } from 'vue-router';
+
 
 export default defineComponent({
   name: 'HomeView',
   components: {
+
     MainHeader
   },
   setup() {
@@ -849,7 +849,6 @@ section {
   left: 0;
   width: 100%;
   height: 100%;
-  background: url('@/assets/pattern.png') center/cover;
   opacity: 0.05;
   z-index: 0;
 }

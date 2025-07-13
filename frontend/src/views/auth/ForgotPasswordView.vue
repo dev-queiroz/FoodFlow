@@ -142,14 +142,14 @@
 
 <script lang="ts">
 import { defineComponent, ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { useNotification } from '@/composables/useNotification';
+
+
 
 export default defineComponent({
   name: 'ForgotPasswordView',
   setup() {
-    const router = useRouter();
-    const { showNotification } = useNotification();
+
+
 
     const isLoading = ref(false);
     const isResending = ref(false);
@@ -189,9 +189,9 @@ export default defineComponent({
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         emailSent.value = true;
-        showNotification('E-mail de recuperação enviado!', 'success');
+        // Notificação removida ('E-mail de recuperação enviado!', 'success');
       } catch (error) {
-        showNotification('Erro ao enviar e-mail. Tente novamente.', 'error');
+        // Notificação removida ('Erro ao enviar e-mail. Tente novamente.', 'error');
       } finally {
         isLoading.value = false;
       }
@@ -204,9 +204,9 @@ export default defineComponent({
         // Simular reenvio de e-mail
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        showNotification('E-mail reenviado com sucesso!', 'success');
+        // Notificação removida ('E-mail reenviado com sucesso!', 'success');
       } catch (error) {
-        showNotification('Erro ao reenviar e-mail. Tente novamente.', 'error');
+        // Notificação removida ('Erro ao reenviar e-mail. Tente novamente.', 'error');
       } finally {
         isResending.value = false;
       }

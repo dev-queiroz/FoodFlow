@@ -1,7 +1,7 @@
-import { defineConfig, mergeConfig, type UserConfig } from 'vite';
+import { defineConfig, type UserConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { resolve } from 'path';
-import pwaConfig from './vite.config.pwa';
+
 
 interface AssetInfo {
   name: string | undefined;
@@ -55,5 +55,5 @@ export default defineConfig(({ command }) => {
   }
   
   // Em produção, mescla com a configuração PWA
-  return mergeConfig(baseConfig, pwaConfig);
+  return baseConfig;
 });

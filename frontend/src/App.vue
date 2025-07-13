@@ -25,6 +25,8 @@ const showNavigationBar = computed(() => {
   if (path === '/') return false
   // Não mostra nas páginas de auth
   if (path.startsWith('/auth')) return false
+  // Não mostra no dashboard admin
+  if (path === '/dashboard') return false
   // Mostra nas demais páginas
   return true
 })

@@ -177,13 +177,13 @@
 <script lang="ts">
 import { defineComponent, ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import { useNotification } from '@/composables/useNotification';
+
 
 export default defineComponent({
   name: 'LoginView',
   setup() {
     const router = useRouter();
-    const { showNotification } = useNotification();
+
 
     const isLoading = ref(false);
     const showPassword = ref(false);
@@ -237,7 +237,7 @@ export default defineComponent({
 
         // Simular sucesso/erro baseado no email
         if (form.email === 'admin@restaurante.com' && form.password === '123456') {
-          showNotification('Login realizado com sucesso!', 'success');
+          // Notificação removida ('Login realizado com sucesso!', 'success');
           
           // Salvar dados de autenticação (substituir por implementação real)
           localStorage.setItem('isAuthenticated', 'true');
@@ -247,7 +247,7 @@ export default defineComponent({
           // Redirecionar baseado no tipo de usuário
           router.push('/admin');
         } else if (form.email === 'garcom@restaurante.com' && form.password === '123456') {
-          showNotification('Login realizado com sucesso!', 'success');
+          // Notificação removida ('Login realizado com sucesso!', 'success');
           
           localStorage.setItem('isAuthenticated', 'true');
           localStorage.setItem('userRole', 'waiter');
@@ -255,7 +255,7 @@ export default defineComponent({
 
           router.push('/waiter');
         } else if (form.email === 'cozinha@restaurante.com' && form.password === '123456') {
-          showNotification('Login realizado com sucesso!', 'success');
+          // Notificação removida ('Login realizado com sucesso!', 'success');
           
           localStorage.setItem('isAuthenticated', 'true');
           localStorage.setItem('userRole', 'kitchen');
@@ -266,7 +266,7 @@ export default defineComponent({
           throw new Error('Credenciais inválidas');
         }
       } catch (error) {
-        showNotification('E-mail ou senha incorretos', 'error');
+        // Notificação removida ('E-mail ou senha incorretos', 'error');
       } finally {
         isLoading.value = false;
       }
@@ -277,10 +277,10 @@ export default defineComponent({
       
       try {
         // Simular login com Google - aqui você implementaria a integração real
-        showNotification('Conectando com Google...', 'info');
+        // Notificação removida ('Conectando com Google...', 'info');
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        showNotification('Login com Google realizado com sucesso!', 'success');
+        // Notificação removida ('Login com Google realizado com sucesso!', 'success');
         
         // Simular dados do usuário do Google
         localStorage.setItem('isAuthenticated', 'true');
@@ -290,7 +290,7 @@ export default defineComponent({
 
         router.push('/admin');
       } catch (error) {
-        showNotification('Erro ao fazer login com Google. Tente novamente.', 'error');
+        // Notificação removida ('Erro ao fazer login com Google. Tente novamente.', 'error');
       } finally {
         isLoading.value = false;
       }
@@ -310,7 +310,7 @@ export default defineComponent({
       form.email = credentials[type].email;
       form.password = credentials[type].password;
       
-      showNotification(`Credenciais de ${type === 'admin' ? 'administrador' : type === 'kitchen' ? 'cozinha' : 'garçom'} preenchidas!`, 'info');
+      // Notificação removida (`Credenciais de ${type === 'admin' ? 'administrador' : type === 'kitchen' ? 'cozinha' : 'garçom'} preenchidas!`, 'info');
     };
 
     return {

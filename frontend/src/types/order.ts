@@ -5,7 +5,7 @@ export interface Order {
   tableId: string;
   tableNumber: number;
   items: OrderItem[];
-  status: 'open' | 'paid' | 'cancelled';
+  status: 'open' | 'paid' | 'cancelled' | 'pending' | 'preparing' | 'ready' | 'delivered' | 'delayed';
   subtotal: number;
   tax: number;
   total: number;
