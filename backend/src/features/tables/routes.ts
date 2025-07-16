@@ -2,8 +2,8 @@ import {Request, Response, Router} from 'express';
 import {TableService} from './service';
 import {QrCodeResponse, Table} from './interfaces';
 import {authMiddleware} from '../../middleware/auth';
-import {validateIdParam, validateText, validateUUID} from '../../utils/validator';
 import {handleValidationErrors} from '../../utils/errorHandler';
+import {validateIdParam, validateText, validateUUID} from '../../utils/validator';
 import {body} from 'express-validator';
 
 const router = Router();
