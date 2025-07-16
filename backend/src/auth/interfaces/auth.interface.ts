@@ -1,4 +1,4 @@
-export interface AuthResponse {
+export class AuthResponse {
     user: {
         id: string;
         email: string;
