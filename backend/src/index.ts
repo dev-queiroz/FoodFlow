@@ -4,6 +4,7 @@ import swaggerUi from 'swagger-ui-express';
 import authRoutes from './features/auth/routes';
 import restaurantRoutes from './features/restaurants/routes';
 import userRoutes from './features/users/routes';
+import tableRoutes from './features/tables/routes';
 import {handleErrors} from './utils/errorHandler';
 
 dotenv.config();
@@ -172,6 +173,78 @@ const swaggerDocument = {
                 responses: {'200': {description: 'Usuário excluído'}, '400': {description: 'Erro ao excluir'}},
             },
         },
+        '/tables': {
+            post: {
+                summary: 'Cria uma nova mesa',
+                security: [{bearerAuth: []}],
+                requestBody: {
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    restaurant_id: {type: 'string'},
+                                    table_number: {type: 'integer', minimum: 1},
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {'201': {description: 'Mesa criada'}, '400': {description: 'Erro ao criar'}},
+            },
+        },
+        '/tables/{restaurantId}': {
+            get: {
+                summary: 'Lista mesas de um restaurante',
+                security: [{bearerAuth: []}],
+                parameters: [{name: 'restaurantId', in: 'path', required: true, schema: {type: 'string'}}],
+                responses: {'200': {description: 'Lista de mesas'}, '400': {description: 'Erro ao listar'}},
+            },
+        },
+        '/tables/{id}': {
+            put: {
+                summary: 'Atualiza uma mesa',
+                security: [{bearerAuth: []}],
+                parameters: [{name: 'id', in: 'path', required: true, schema: {type: 'string'}}],
+                requestBody: {
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    table_number: {type: 'integer', minimum: 1, nullable: true},
+                                    status: {
+                                        type: 'string',
+                                        enum: ['available', 'occupied', 'reserved'],
+                                        nullable: true
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {'200': {description: 'Mesa atualizada'}, '400': {description: 'Erro ao atualizar'}},
+            },
+            delete: {
+                summary: 'Exclui uma mesa',
+                security: [{bearerAuth: []}],
+                parameters: [{name: 'id', in: 'path', required: true, schema: {type: 'string'}}],
+                responses: {'200': {description: 'Mesa excluída'}, '400': {description: 'Erro ao excluir'}},
+            },
+        },
+        '/tables/validate-qr': {
+            post: {
+                summary: 'Valida um QR code',
+                requestBody: {
+                    content: {
+                        'application/json': {
+                            schema: {type: 'object', properties: {qr_code: {type: 'string'}}},
+                        },
+                    },
+                },
+                responses: {'200': {description: 'QR code validado'}, '400': {description: 'QR code inválido'}},
+            },
+        },
     },
     components: {securitySchemes: {bearerAuth: {type: 'http', scheme: 'bearer', bearerFormat: 'JWT'}}},
 };
@@ -185,6 +258,7 @@ app.get('/', (req: Request, res: Response) => {
 app.use('/auth', authRoutes);
 app.use('/restaurants', restaurantRoutes);
 app.use('/users', userRoutes);
+app.use('/tables', tableRoutes);
 
 app.use(handleErrors);
 
