@@ -36,7 +36,7 @@ router.post(
 // Listar Mesas
 router.get(
     '/:restaurantId',
-    [authMiddleware, validateUUID('restaurantId'), handleValidationErrors],
+    [authMiddleware, validateUUID('restaurantId', false, true), handleValidationErrors],
     async (req: Request, res: Response) => {
         try {
             console.log(`Listando mesas para restaurantId: ${req.params.restaurantId}`);
@@ -55,7 +55,7 @@ router.put(
     '/:id',
     [
         authMiddleware,
-        validateUUID('id'),
+        validateUUID('id', false, true),
         body('table_number').optional().isInt({min: 1}).withMessage('Número da mesa deve ser um inteiro positivo'),
         body('status')
             .optional()
@@ -79,7 +79,7 @@ router.put(
 // Excluir Mesa
 router.delete(
     '/:id',
-    [authMiddleware, validateUUID('id'), handleValidationErrors],
+    [authMiddleware, validateUUID('id', false, true), handleValidationErrors],
     async (req: Request, res: Response) => {
         try {
             console.log('Excluindo mesa:', req.params.id);
