@@ -1,13 +1,21 @@
-import { Request, Response, NextFunction } from 'express';
-import { validationResult } from 'express-validator';
+import {NextFunction, Request, Response} from 'express';
+import {validationResult} from 'express-validator';
 
-export function handleValidationErrors(req: Request, res: Response, next: NextFunction) {
+export const handleValidationErrors = (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        console.log('Erros de validação:', JSON.stringify(errors.array()));
+        return res.status(400).json({
+            errors: errors.array().map((err: any) => ({
+                type: err.type,
+                msg: err.msg,
+                path: err.path,
+                location: err.location,
+            })),
+        });
     }
     next();
-}
+};
 
 export function handleErrors(err: any, req: Request, res: Response, next: NextFunction) {
     console.error('Erro:', err.message);

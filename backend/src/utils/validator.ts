@@ -11,15 +11,25 @@ export const validateName = (optional = false): ValidationChain =>
         ? body('name').optional().notEmpty().withMessage('Nome não pode ser vazio')
         : body('name').notEmpty().withMessage('Nome é obrigatório');
 
-export const validateUUID = (field: string, optional = false): ValidationChain =>
-    optional
-        ? body(field).optional().isUUID().withMessage(`${field} inválido`)
-        : body(field).isUUID().withMessage(`${field} inválido`);
+export const validateUUID = (field: string, optional = false) => {
+    const validator = (value: string) => {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(value)) {
+            throw new Error(`${field} inválido`);
+        }
+        return true;
+    };
+
+    return optional
+        ? body(field).optional().custom(validator)
+        : body(field).notEmpty().withMessage(`${field} é obrigatório`).custom(validator);
+};
 
 export const validateIdParam = (): ValidationChain =>
     param('id').isUUID().withMessage('ID inválido');
 
-export const validateText = (field: string, optional = false): ValidationChain =>
-    optional
-        ? body(field).optional().isString().withMessage(`${field} deve ser texto`)
-        : body(field).isString().withMessage(`${field} deve ser texto`);
+export const validateText = (field: string, optional = false) => {
+    return optional
+        ? body(field).optional().isString().withMessage(`${field} deve ser uma string`)
+        : body(field).notEmpty().withMessage(`${field} é obrigatório`).isString().withMessage(`${field} deve ser uma string`);
+};

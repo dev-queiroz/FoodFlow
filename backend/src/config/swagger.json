@@ -1,0 +1,4041 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "FoodFlow API",
+    "version": "1.0.0",
+    "description": "API para o sistema FoodFlow, um SaaS para gestão de restaurantes. Inclui autenticação, gestão de restaurantes, usuários, mesas, cardápio, sessões, pedidos, relatórios, reservas e personalização de estilo."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Servidor local"
+    },
+    {
+      "url": "https://foodflow-api.render.com",
+      "description": "Servidor de produção (Render)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Endpoints para autenticação e gerenciamento de usuários"
+    },
+    {
+      "name": "Restaurants",
+      "description": "Endpoints para criação, listagem, atualização e exclusão de restaurantes"
+    },
+    {
+      "name": "Users",
+      "description": "Endpoints para gerenciamento de usuários do restaurante (garçons, cozinheiros, etc.)"
+    },
+    {
+      "name": "Tables",
+      "description": "Endpoints para gerenciamento de mesas e validação de QR codes"
+    },
+    {
+      "name": "Menu",
+      "description": "Endpoints para gerenciamento de cardápio (itens e categorias)"
+    },
+    {
+      "name": "Sessions",
+      "description": "Endpoints para gerenciamento de sessões de mesas"
+    },
+    {
+      "name": "Orders",
+      "description": "Endpoints para criação, listagem, atualização e exclusão de pedidos"
+    },
+    {
+      "name": "Reports",
+      "description": "Endpoints para geração de relatórios (vendas, ocupação, estoque)"
+    },
+    {
+      "name": "Reservations",
+      "description": "Endpoints para gerenciamento de reservas"
+    },
+    {
+      "name": "Customization",
+      "description": "Endpoints para personalização de estilo do restaurante"
+    }
+  ],
+  "paths": {
+    "/roles": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Lista papéis disponíveis",
+        "description": "Retorna a lista de papéis disponíveis no sistema (público).",
+        "responses": {
+          "200": {
+            "description": "Lista de papéis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoleResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "09603787-2fca-4e4c-9e6c-7b349232c512",
+                    "name": "admin",
+                    "description": "Full access to manage restaurant, users, and orders"
+                  },
+                  {
+                    "id": "1350d40c-a7fb-4b30-850e-4986048a7a3b",
+                    "name": "cook",
+                    "description": "View and update orders"
+                  },
+                  {
+                    "id": "3f3aed51-f815-40dc-a372-a31de658319f",
+                    "name": "waiter",
+                    "description": "Manage orders and tables"
+                  },
+                  {
+                    "id": "e7256f9b-9f57-4fde-b15e-0bdefb0390f6",
+                    "name": "customer",
+                    "description": "Access menu, create and view own orders"
+                  }
+                ]
+              }
+            }
+          },
+          "500": {
+            "description": "Erro ao listar papéis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Erro ao listar papéis"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Autentica um usuário",
+        "description": "Autentica um usuário com e-mail e senha, retornando um token JWT para acesso aos endpoints protegidos.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInput"
+              },
+              "example": {
+                "email": "dono@restaurante.com",
+                "password": "senha123"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login bem-sucedido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                },
+                "example": {
+                  "message": "Login bem-sucedido",
+                  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciais inválidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Credenciais inválidas"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Cadastra um novo usuário",
+        "description": "Cria um novo usuário (admin, waiter, cook, customer). O restaurant_id é opcional para admin. Use /roles para obter os IDs dos papéis.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterInput"
+              },
+              "example": {
+                "email": "dono@restaurante.com",
+                "password": "senha123",
+                "name": "João Silva",
+                "role_id": "09603787-2fca-4e4c-9e6c-7b349232c512",
+                "restaurant_id": null
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "example": {
+                  "id": "user_1",
+                  "email": "dono@restaurante.com",
+                  "name": "João Silva",
+                  "role_id": "09603787-2fca-4e4c-9e6c-7b349232c512",
+                  "restaurant_id": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro no cadastro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "errors": [
+                    {
+                      "msg": "role_id inválido",
+                      "path": "role_id",
+                      "location": "body"
+                    },
+                    {
+                      "msg": "restaurant_id inválido",
+                      "path": "restaurant_id",
+                      "location": "body"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Envia e-mail para redefinição de senha",
+        "description": "Envia um e-mail com um link para redefinição de senha para o endereço fornecido.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "E-mail do usuário"
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              },
+              "example": {
+                "email": "dono@restaurante.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "E-mail enviado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "message": "E-mail de redefinição enviado"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao enviar e-mail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "E-mail não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/profile": {
+      "put": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Atualiza o perfil do usuário",
+        "description": "Atualiza o nome ou e-mail do usuário autenticado. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileInput"
+              },
+              "example": {
+                "name": "João Silva",
+                "email": "novo.dono@restaurante.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "example": {
+                  "id": "user_1",
+                  "email": "novo.dono@restaurante.com",
+                  "name": "João Silva",
+                  "role_id": "09603787-2fca-4e4c-9e6c-7b349232c512",
+                  "restaurant_id": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao atualizar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "E-mail já em uso"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants": {
+      "post": {
+        "tags": [
+          "Restaurants"
+        ],
+        "summary": "Cria um novo restaurante",
+        "description": "Cria um restaurante para o dono autenticado. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestaurantInput"
+              },
+              "example": {
+                "name": "Restaurante Sabor",
+                "description": "Cozinha brasileira",
+                "address": "Rua das Flores, 123",
+                "contact_number": "(11) 99999-9999"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Restaurante criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestaurantResponse"
+                },
+                "example": {
+                  "id": "rest_1",
+                  "name": "Restaurante Sabor",
+                  "description": "Cozinha brasileira",
+                  "address": "Rua das Flores, 123",
+                  "contact_number": "(11) 99999-9999"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao criar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Nome do restaurante já existe"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Restaurants"
+        ],
+        "summary": "Lista restaurantes do dono",
+        "description": "Retorna a lista de restaurantes pertencentes ao dono autenticado. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de restaurantes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RestaurantResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "rest_1",
+                    "name": "Restaurante Sabor",
+                    "description": "Cozinha brasileira",
+                    "address": "Rua das Flores, 123",
+                    "contact_number": "(11) 99999-9999"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao listar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Erro ao buscar restaurantes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants/all": {
+      "get": {
+        "tags": [
+          "Restaurants"
+        ],
+        "summary": "Lista todos os restaurantes",
+        "description": "Retorna todos os restaurantes disponíveis (público, usado por clientes).",
+        "responses": {
+          "200": {
+            "description": "Lista de restaurantes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RestaurantResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "rest_1",
+                    "name": "Restaurante Sabor",
+                    "description": "Cozinha brasileira",
+                    "address": "Rua das Flores, 123",
+                    "contact_number": "(11) 99999-9999"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao listar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Erro ao buscar restaurantes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants/{id}": {
+      "put": {
+        "tags": [
+          "Restaurants"
+        ],
+        "summary": "Atualiza um restaurante",
+        "description": "Atualiza os dados de um restaurante específico. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestaurantInput"
+              },
+              "example": {
+                "name": "Restaurante Sabor Novo",
+                "description": "Cozinha brasileira moderna",
+                "address": "Rua das Flores, 456",
+                "contact_number": "(11) 88888-8888"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Restaurante atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestaurantResponse"
+                },
+                "example": {
+                  "id": "rest_1",
+                  "name": "Restaurante Sabor Novo",
+                  "description": "Cozinha brasileira moderna",
+                  "address": "Rua das Flores, 456",
+                  "contact_number": "(11) 88888-8888"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao atualizar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Restaurants"
+        ],
+        "summary": "Exclui um restaurante",
+        "description": "Remove um restaurante específico. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Restaurante excluído"
+          },
+          "400": {
+            "description": "Erro ao excluir",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{restaurantId}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Lista usuários de um restaurante",
+        "description": "Retorna a lista de usuários (garçons, cozinheiros, etc.) associados a um restaurante. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de usuários",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "user_1",
+                    "email": "garcom@restaurante.com",
+                    "name": "Ana Souza",
+                    "role_id": "3f3aed51-f815-40dc-a372-a31de658319f",
+                    "restaurant_id": "rest_1"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao listar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Atualiza um usuário",
+        "description": "Atualiza o papel, restaurante ou status de um usuário. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do usuário"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserInput"
+              },
+              "example": {
+                "role_id": "3f3aed51-f815-40dc-a372-a31de658319f",
+                "restaurant_id": "rest_1",
+                "is_active": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Usuário atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "example": {
+                  "id": "user_1",
+                  "email": "garcom@restaurante.com",
+                  "name": "Ana Souza",
+                  "role_id": "3f3aed51-f815-40dc-a372-a31de658319f",
+                  "restaurant_id": "rest_1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao atualizar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Usuário não encontrado"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Exclui um usuário",
+        "description": "Remove um usuário do sistema. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do usuário"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Usuário excluído"
+          },
+          "400": {
+            "description": "Erro ao excluir",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Usuário não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tables": {
+      "post": {
+        "tags": [
+          "Tables"
+        ],
+        "summary": "Cria uma nova mesa",
+        "description": "Cria uma nova mesa para um restaurante. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TableInput"
+              },
+              "example": {
+                "restaurant_id": "rest_1",
+                "table_number": 1,
+                "capacity": 4
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mesa criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableResponse"
+                },
+                "example": {
+                  "id": "table_1",
+                  "restaurant_id": "rest_1",
+                  "table_number": 1,
+                  "status": "available"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao criar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Mesa já existe"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tables/{restaurantId}": {
+      "get": {
+        "tags": [
+          "Tables"
+        ],
+        "summary": "Lista mesas de um restaurante",
+        "description": "Retorna todas as mesas de um restaurante. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de mesas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TableResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "table_1",
+                    "restaurant_id": "rest_1",
+                    "table_number": 1,
+                    "status": "available"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao listar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tables/{id}": {
+      "put": {
+        "tags": [
+          "Tables"
+        ],
+        "summary": "Atualiza uma mesa",
+        "description": "Atualiza o número ou status de uma mesa. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID da mesa"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTableInput"
+              },
+              "example": {
+                "table_number": 2,
+                "status": "occupied"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mesa atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableResponse"
+                },
+                "example": {
+                  "id": "table_1",
+                  "restaurant_id": "rest_1",
+                  "table_number": 2,
+                  "status": "occupied"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao atualizar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Mesa não encontrada"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Tables"
+        ],
+        "summary": "Exclui uma mesa",
+        "description": "Remove uma mesa do sistema. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID da mesa"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Mesa excluída"
+          },
+          "400": {
+            "description": "Erro ao excluir",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Mesa não encontrada"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tables/validate-qr": {
+      "post": {
+        "tags": [
+          "Tables"
+        ],
+        "summary": "Valida um QR code",
+        "description": "Valida o QR code de uma mesa, retornando informações da mesa para acesso ao cardápio.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "qr_code": {
+                    "type": "string",
+                    "description": "Código do QR code da mesa"
+                  }
+                },
+                "required": [
+                  "qr_code"
+                ]
+              },
+              "example": {
+                "qr_code": "table_1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "QR code validado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableResponse"
+                },
+                "example": {
+                  "id": "table_1",
+                  "restaurant_id": "rest_1",
+                  "table_number": 1,
+                  "status": "available"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "QR code inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "QR code inválido"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/menu/items": {
+      "post": {
+        "tags": [
+          "Menu"
+        ],
+        "summary": "Cria um novo item do cardápio",
+        "description": "Adiciona um item ao cardápio de um restaurante. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MenuItemInput"
+              },
+              "example": {
+                "restaurant_id": "rest_1",
+                "category_id": "cat_1",
+                "name": "Hambúrguer",
+                "description": "Hambúrguer com queijo e bacon",
+                "price": 29.90,
+                "is_available": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Item criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MenuItemResponse"
+                },
+                "example": {
+                  "id": "item_1",
+                  "restaurant_id": "rest_1",
+                  "category_id": "cat_1",
+                  "name": "Hambúrguer",
+                  "description": "Hambúrguer com queijo e bacon",
+                  "price": 29.90,
+                  "is_available": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao criar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante ou categoria não encontrada"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/menu/items/{restaurantId}": {
+      "get": {
+        "tags": [
+          "Menu"
+        ],
+        "summary": "Lista itens do cardápio de um restaurante",
+        "description": "Retorna todos os itens do cardápio de um restaurante (público, usado por clientes).",
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de itens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MenuItemResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "item_1",
+                    "restaurant_id": "rest_1",
+                    "category_id": "cat_1",
+                    "name": "Hambúrguer",
+                    "description": "Hambúrguer com queijo e bacon",
+                    "price": 29.90,
+                    "is_available": true
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao listar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/menu/items/{id}": {
+      "put": {
+        "tags": [
+          "Menu"
+        ],
+        "summary": "Atualiza um item do cardápio",
+        "description": "Atualiza os dados de um item do cardápio. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do item do cardápio"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMenuItemInput"
+              },
+              "example": {
+                "restaurant_id": "rest_1",
+                "category_id": "cat_1",
+                "name": "Hambúrguer Premium",
+                "description": "Hambúrguer com queijo cheddar",
+                "price": 34.90,
+                "is_available": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MenuItemResponse"
+                },
+                "example": {
+                  "id": "item_1",
+                  "restaurant_id": "rest_1",
+                  "category_id": "cat_1",
+                  "name": "Hambúrguer Premium",
+                  "description": "Hambúrguer com queijo cheddar",
+                  "price": 34.90,
+                  "is_available": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao atualizar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Item não encontrado"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Menu"
+        ],
+        "summary": "Exclui um item do cardápio",
+        "description": "Remove um item do cardápio. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do item do cardápio"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "restaurant_id": {
+                    "type": "string",
+                    "description": "ID do restaurante"
+                  }
+                },
+                "required": [
+                  "restaurant_id"
+                ]
+              },
+              "example": {
+                "restaurant_id": "rest_1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Item excluído"
+          },
+          "400": {
+            "description": "Erro ao excluir",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Item não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/menu/categories": {
+      "post": {
+        "tags": [
+          "Menu"
+        ],
+        "summary": "Cria uma nova categoria do cardápio",
+        "description": "Cria uma categoria para o cardápio de um restaurante. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryInput"
+              },
+              "example": {
+                "restaurant_id": "rest_1",
+                "name": "Bebidas",
+                "description": "Bebidas alcoólicas e não alcoólicas"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Categoria criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                },
+                "example": {
+                  "id": "cat_1",
+                  "restaurant_id": "rest_1",
+                  "name": "Bebidas",
+                  "description": "Bebidas alcoólicas e não alcoólicas"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao criar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/menu/categories/{id}": {
+      "put": {
+        "tags": [
+          "Menu"
+        ],
+        "summary": "Atualiza uma categoria do cardápio",
+        "description": "Atualiza os dados de uma categoria do cardápio. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID da categoria"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryInput"
+              },
+              "example": {
+                "restaurant_id": "rest_1",
+                "name": "Bebidas Premium",
+                "description": "Bebidas importadas"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Categoria atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                },
+                "example": {
+                  "id": "cat_1",
+                  "restaurant_id": "rest_1",
+                  "name": "Bebidas Premium",
+                  "description": "Bebidas importadas"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao atualizar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Categoria não encontrada"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Menu"
+        ],
+        "summary": "Exclui uma categoria do cardápio",
+        "description": "Remove uma categoria do cardápio. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID da categoria"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "restaurant_id": {
+                    "type": "string",
+                    "description": "ID do restaurante"
+                  }
+                },
+                "required": [
+                  "restaurant_id"
+                ]
+              },
+              "example": {
+                "restaurant_id": "rest_1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Categoria excluída"
+          },
+          "400": {
+            "description": "Erro ao excluir",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Categoria não encontrada"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions": {
+      "post": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Cria uma nova sessão",
+        "description": "Inicia uma sessão para uma mesa ocupada. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionInput"
+              },
+              "example": {
+                "table_id": "table_1",
+                "client_id": null
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sessão criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                },
+                "example": {
+                  "id": "session_1",
+                  "table_id": "table_1",
+                  "client_id": null,
+                  "status": "active"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao criar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Mesa não encontrada"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{restaurantId}": {
+      "get": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Lista sessões de um restaurante",
+        "description": "Retorna todas as sessões de um restaurante. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de sessões",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SessionResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "session_1",
+                    "table_id": "table_1",
+                    "client_id": null,
+                    "status": "active"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao listar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}": {
+      "put": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Atualiza uma sessão",
+        "description": "Atualiza o status de uma sessão (active, closed). Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID da sessão"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "closed"
+                    ],
+                    "description": "Status da sessão",
+                    "nullable": true
+                  }
+                }
+              },
+              "example": {
+                "status": "closed"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sessão atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                },
+                "example": {
+                  "id": "session_1",
+                  "table_id": "table_1",
+                  "client_id": null,
+                  "status": "closed"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao atualizar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Sessão não encontrada"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Sessions"
+        ],
+        "summary": "Exclui uma sessão",
+        "description": "Remove uma sessão do sistema. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID da sessão"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sessão excluída"
+          },
+          "400": {
+            "description": "Erro ao excluir",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Sessão não encontrada"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Cria um novo pedido",
+        "description": "Cria um pedido para uma sessão e mesa. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderInput"
+              },
+              "example": {
+                "session_id": "session_1",
+                "restaurant_id": "rest_1",
+                "table_id": "table_1",
+                "user_id": null,
+                "items": [
+                  {
+                    "item_id": "item_1",
+                    "quantity": 2,
+                    "customizations": "Sem cebola"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pedido criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                },
+                "example": {
+                  "id": "order_1",
+                  "session_id": "session_1",
+                  "restaurant_id": "rest_1",
+                  "table_id": "table_1",
+                  "user_id": null,
+                  "status": "pending",
+                  "items": [
+                    {
+                      "item_id": "item_1",
+                      "quantity": 2,
+                      "customizations": "Sem cebola"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao criar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Sessão ou mesa não encontrada"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{restaurantId}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Lista pedidos de um restaurante",
+        "description": "Retorna pedidos de um restaurante, filtrados por data ou status. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Data inicial do filtro (ISO 8601)"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Data final do filtro (ISO 8601)"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "confirmed",
+                "completed",
+                "cancelled"
+              ],
+              "description": "Status do pedido"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pedidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "order_1",
+                    "session_id": "session_1",
+                    "restaurant_id": "rest_1",
+                    "table_id": "table_1",
+                    "user_id": null,
+                    "status": "pending",
+                    "items": [
+                      {
+                        "item_id": "item_1",
+                        "quantity": 2,
+                        "customizations": "Sem cebola"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao listar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Visualiza um pedido específico",
+        "description": "Retorna os detalhes de um pedido específico. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do pedido"
+            }
+          },
+          {
+            "name": "restaurant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes do pedido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                },
+                "example": {
+                  "id": "order_1",
+                  "session_id": "session_1",
+                  "restaurant_id": "rest_1",
+                  "table_id": "table_1",
+                  "user_id": null,
+                  "status": "pending",
+                  "items": [
+                    {
+                      "item_id": "item_1",
+                      "quantity": 2,
+                      "customizations": "Sem cebola"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao buscar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Pedido não encontrado"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Atualiza um pedido",
+        "description": "Atualiza o status ou itens de um pedido. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do pedido"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrderInput"
+              },
+              "example": {
+                "restaurant_id": "rest_1",
+                "status": "confirmed",
+                "items": [
+                  {
+                    "item_id": "item_1",
+                    "quantity": 3,
+                    "customizations": "Sem cebola"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pedido atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponse"
+                },
+                "example": {
+                  "id": "order_1",
+                  "session_id": "session_1",
+                  "restaurant_id": "rest_1",
+                  "table_id": "table_1",
+                  "user_id": null,
+                  "status": "confirmed",
+                  "items": [
+                    {
+                      "item_id": "item_1",
+                      "quantity": 3,
+                      "customizations": "Sem cebola"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao atualizar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Pedido não encontrado"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Exclui um pedido",
+        "description": "Remove um pedido do sistema. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do pedido"
+            }
+          },
+          {
+            "name": "restaurant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Pedido excluído"
+          },
+          "400": {
+            "description": "Erro ao excluir",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Pedido não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{id}/items": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Lista itens de um pedido",
+        "description": "Retorna os itens de um pedido específico. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do pedido"
+            }
+          },
+          {
+            "name": "restaurant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de itens do pedido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrderItem"
+                  }
+                },
+                "example": [
+                  {
+                    "item_id": "item_1",
+                    "quantity": 2,
+                    "customizations": "Sem cebola"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao listar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Pedido não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/sales/{restaurantId}": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Gera relatório de vendas",
+        "description": "Gera um relatório de vendas para um restaurante, com filtros por data e formato (JSON, PDF, CSV). Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Data inicial do filtro (ISO 8601)"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Data final do filtro (ISO 8601)"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "pdf",
+                "csv"
+              ],
+              "description": "Formato do relatório"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Relatório de vendas gerado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SalesReport"
+                  }
+                },
+                "example": [
+                  {
+                    "order_id": "order_1",
+                    "total": 59.80,
+                    "date": "2025-07-19T12:00:00Z"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao gerar relatório",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/occupancy/{restaurantId}": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Gera relatório de ocupação",
+        "description": "Gera um relatório de ocupação de mesas para um restaurante, com filtros por data e formato (JSON, PDF, CSV). Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Data inicial do filtro (ISO 8601)"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Data final do filtro (ISO 8601)"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "pdf",
+                "csv"
+              ],
+              "description": "Formato do relatório"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Relatório de ocupação gerado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OccupancyReport"
+                  }
+                },
+                "example": [
+                  {
+                    "table_id": "table_1",
+                    "status": "occupied",
+                    "date": "2025-07-19T12:00:00Z"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao gerar relatório",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/inventory/{restaurantId}": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Gera relatório de estoque",
+        "description": "Gera um relatório de estoque para um restaurante, com filtros por data e formato (JSON, PDF, CSV). Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Data inicial do filtro (ISO 8601)"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Data final do filtro (ISO 8601)"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "pdf",
+                "csv"
+              ],
+              "description": "Formato do relatório"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Relatório de estoque gerado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InventoryReport"
+                  }
+                },
+                "example": [
+                  {
+                    "item_id": "item_1",
+                    "name": "Hambúrguer",
+                    "quantity_used": 10,
+                    "date": "2025-07-19T12:00:00Z"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao gerar relatório",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reservations": {
+      "post": {
+        "tags": [
+          "Reservations"
+        ],
+        "summary": "Cria uma nova reserva",
+        "description": "Cria uma reserva para um restaurante. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationInput"
+              },
+              "example": {
+                "restaurant_id": "rest_1",
+                "user_id": null,
+                "table_id": null,
+                "reservation_date": "2025-07-20T19:00:00Z",
+                "number_of_guests": 4,
+                "notes": "Mesa perto da janela",
+                "status": "pending"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reserva criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationResponse"
+                },
+                "example": {
+                  "id": "res_1",
+                  "restaurant_id": "rest_1",
+                  "user_id": null,
+                  "table_id": null,
+                  "reservation_date": "2025-07-20T19:00:00Z",
+                  "number_of_guests": 4,
+                  "notes": "Mesa perto da janela",
+                  "status": "pending"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao criar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reservations/{restaurantId}": {
+      "get": {
+        "tags": [
+          "Reservations"
+        ],
+        "summary": "Lista reservas de um restaurante",
+        "description": "Retorna todas as reservas de um restaurante, filtradas por data ou status. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Data inicial do filtro (ISO 8601)"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Data final do filtro (ISO 8601)"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "confirmed",
+                "cancelled"
+              ],
+              "description": "Status da reserva"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de reservas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationResponse"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "res_1",
+                    "restaurant_id": "rest_1",
+                    "user_id": null,
+                    "table_id": null,
+                    "reservation_date": "2025-07-20T19:00:00Z",
+                    "number_of_guests": 4,
+                    "notes": "Mesa perto da janela",
+                    "status": "pending"
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao listar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reservations/{id}": {
+      "put": {
+        "tags": [
+          "Reservations"
+        ],
+        "summary": "Atualiza uma reserva",
+        "description": "Atualiza os dados de uma reserva. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID da reserva"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReservationInput"
+              },
+              "example": {
+                "restaurant_id": "rest_1",
+                "user_id": null,
+                "table_id": "table_1",
+                "reservation_date": "2025-07-20T19:00:00Z",
+                "number_of_guests": 4,
+                "notes": "Mesa perto da janela",
+                "status": "confirmed"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reserva atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationResponse"
+                },
+                "example": {
+                  "id": "res_1",
+                  "restaurant_id": "rest_1",
+                  "user_id": null,
+                  "table_id": "table_1",
+                  "reservation_date": "2025-07-20T19:00:00Z",
+                  "number_of_guests": 4,
+                  "notes": "Mesa perto da janela",
+                  "status": "confirmed"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao atualizar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Reserva não encontrada"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Reservations"
+        ],
+        "summary": "Exclui uma reserva",
+        "description": "Remove uma reserva do sistema. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID da reserva"
+            }
+          },
+          {
+            "name": "restaurant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Reserva excluída"
+          },
+          "400": {
+            "description": "Erro ao excluir",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Reserva não encontrada"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customization": {
+      "post": {
+        "tags": [
+          "Customization"
+        ],
+        "summary": "Cria ou atualiza configurações de estilo",
+        "description": "Define ou atualiza as configurações de estilo (cores, logo) de um restaurante. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomizationInput"
+              },
+              "example": {
+                "restaurant_id": "rest_1",
+                "primary_color": "#FF5733",
+                "secondary_color": "#C70039",
+                "logo_url": "https://github.com/seu-usuario/foodflow-backend/logo.png"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Configuração criada ou atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomizationResponse"
+                },
+                "example": {
+                  "restaurant_id": "rest_1",
+                  "primary_color": "#FF5733",
+                  "secondary_color": "#C70039",
+                  "logo_url": "https://github.com/seu-usuario/foodflow-backend/logo.png"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro ao criar/atualizar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Restaurante não encontrado"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customization/{restaurantId}": {
+      "get": {
+        "tags": [
+          "Customization"
+        ],
+        "summary": "Obtém configurações de estilo",
+        "description": "Retorna as configurações de estilo de um restaurante (público, usado por clientes).",
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configurações de estilo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomizationResponse"
+                },
+                "example": {
+                  "restaurant_id": "rest_1",
+                  "primary_color": "#FF5733",
+                  "secondary_color": "#C70039",
+                  "logo_url": "https://github.com/seu-usuario/foodflow-backend/logo.png"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Configuração não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Configuração não encontrada"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Customization"
+        ],
+        "summary": "Exclui configurações de estilo",
+        "description": "Remove as configurações de estilo de um restaurante. Requer JWT.",
+        "security": [
+          {
+            "bearerauth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do restaurante"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Configuração excluída"
+          },
+          "400": {
+            "description": "Erro ao excluir",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Configuração não encontrada"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerauth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtido via /auth/login"
+      }
+    },
+    "schemas": {
+      "RoleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do papel"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do papel (ex.: admin, waiter, cook, customer)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição do papel"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description"
+        ]
+      },
+      "LoginInput": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "E-mail do usuário"
+          },
+          "password": {
+            "type": "string",
+            "description": "Senha do usuário"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Mensagem de sucesso"
+          },
+          "token": {
+            "type": "string",
+            "description": "Token JWT para autenticação"
+          }
+        },
+        "required": [
+          "message",
+          "token"
+        ]
+      },
+      "RegisterInput": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "E-mail do usuário"
+          },
+          "password": {
+            "type": "string",
+            "description": "Senha do usuário"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do usuário"
+          },
+          "role_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do papel"
+          },
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante (opcional para admin)",
+            "nullable": true
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "name",
+          "role_id"
+        ]
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do usuário"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "E-mail do usuário"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do usuário"
+          },
+          "role_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do papel"
+          },
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "role_id"
+        ]
+      },
+      "UpdateProfileInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nome do usuário",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "E-mail do usuário",
+            "nullable": true
+          }
+        }
+      },
+      "RestaurantInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nome do restaurante"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição do restaurante",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "description": "Endereço do restaurante"
+          },
+          "contact_number": {
+            "type": "string",
+            "description": "Número de contato do restaurante"
+          }
+        },
+        "required": [
+          "name",
+          "address",
+          "contact_number"
+        ]
+      },
+      "RestaurantResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do restaurante"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição do restaurante",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "description": "Endereço do restaurante"
+          },
+          "contact_number": {
+            "type": "string",
+            "description": "Número de contato do restaurante"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "address",
+          "contact_number"
+        ]
+      },
+      "UpdateUserInput": {
+        "type": "object",
+        "properties": {
+          "role_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do papel",
+            "nullable": true
+          },
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante",
+            "nullable": true
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Status do usuário",
+            "nullable": true
+          }
+        }
+      },
+      "TableInput": {
+        "type": "object",
+        "properties": {
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "table_number": {
+            "type": "integer",
+            "description": "Número da mesa"
+          }
+        },
+        "required": [
+          "restaurant_id",
+          "table_number"
+        ]
+      },
+      "TableResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da mesa"
+          },
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "table_number": {
+            "type": "integer",
+            "description": "Número da mesa"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "occupied",
+              "reserved"
+            ],
+            "description": "Status da mesa"
+          }
+        },
+        "required": [
+          "id",
+          "restaurant_id",
+          "table_number",
+          "status"
+        ]
+      },
+      "UpdateTableInput": {
+        "type": "object",
+        "properties": {
+          "table_number": {
+            "type": "integer",
+            "description": "Número da mesa",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "occupied",
+              "reserved"
+            ],
+            "description": "Status da mesa",
+            "nullable": true
+          }
+        }
+      },
+      "MenuItemInput": {
+        "type": "object",
+        "properties": {
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da categoria"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do item"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição do item",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "description": "Preço do item"
+          },
+          "is_available": {
+            "type": "boolean",
+            "description": "Disponibilidade do item"
+          }
+        },
+        "required": [
+          "restaurant_id",
+          "category_id",
+          "name",
+          "price",
+          "is_available"
+        ]
+      },
+      "MenuItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do item"
+          },
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da categoria"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do item"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição do item",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "description": "Preço do item"
+          },
+          "is_available": {
+            "type": "boolean",
+            "description": "Disponibilidade do item"
+          }
+        },
+        "required": [
+          "id",
+          "restaurant_id",
+          "category_id",
+          "name",
+          "price",
+          "is_available"
+        ]
+      },
+      "UpdateMenuItemInput": {
+        "type": "object",
+        "properties": {
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da categoria",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do item",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição do item",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "description": "Preço do item",
+            "nullable": true
+          },
+          "is_available": {
+            "type": "boolean",
+            "description": "Disponibilidade do item",
+            "nullable": true
+          }
+        },
+        "required": [
+          "restaurant_id"
+        ]
+      },
+      "CategoryInput": {
+        "type": "object",
+        "properties": {
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome da categoria"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição da categoria",
+            "nullable": true
+          }
+        },
+        "required": [
+          "restaurant_id",
+          "name"
+        ]
+      },
+      "CategoryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da categoria"
+          },
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome da categoria"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição da categoria",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "restaurant_id",
+          "name"
+        ]
+      },
+      "UpdateCategoryInput": {
+        "type": "object",
+        "properties": {
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome da categoria",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição da categoria",
+            "nullable": true
+          }
+        },
+        "required": [
+          "restaurant_id"
+        ]
+      },
+      "SessionInput": {
+        "type": "object",
+        "properties": {
+          "table_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da mesa"
+          },
+          "client_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do cliente (opcional)",
+            "nullable": true
+          }
+        },
+        "required": [
+          "table_id"
+        ]
+      },
+      "SessionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da sessão"
+          },
+          "table_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da mesa"
+          },
+          "client_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do cliente",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "closed"
+            ],
+            "description": "Status da sessão"
+          }
+        },
+        "required": [
+          "id",
+          "table_id",
+          "status"
+        ]
+      },
+      "OrderItem": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do item do cardápio"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Quantidade do item"
+          },
+          "customizations": {
+            "type": "string",
+            "description": "Personalizações do item",
+            "nullable": true
+          }
+        },
+        "required": [
+          "item_id",
+          "quantity"
+        ]
+      },
+      "OrderInput": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da sessão"
+          },
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "table_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da mesa"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do usuário (opcional)",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItem"
+            },
+            "description": "Itens do pedido"
+          }
+        },
+        "required": [
+          "session_id",
+          "restaurant_id",
+          "table_id",
+          "items"
+        ]
+      },
+      "OrderResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do pedido"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da sessão"
+          },
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "table_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da mesa"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do usuário",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "completed",
+              "cancelled"
+            ],
+            "description": "Status do pedido"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItem"
+            },
+            "description": "Itens do pedido"
+          }
+        },
+        "required": [
+          "id",
+          "session_id",
+          "restaurant_id",
+          "table_id",
+          "status",
+          "items"
+        ]
+      },
+      "UpdateOrderInput": {
+        "type": "object",
+        "properties": {
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "completed",
+              "cancelled"
+            ],
+            "description": "Status do pedido",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItem"
+            },
+            "description": "Itens do pedido",
+            "nullable": true
+          }
+        },
+        "required": [
+          "restaurant_id"
+        ]
+      },
+      "SalesReport": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do pedido"
+          },
+          "total": {
+            "type": "number",
+            "description": "Valor total do pedido"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data do pedido"
+          }
+        },
+        "required": [
+          "order_id",
+          "total",
+          "date"
+        ]
+      },
+      "OccupancyReport": {
+        "type": "object",
+        "properties": {
+          "table_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da mesa"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "occupied",
+              "reserved"
+            ],
+            "description": "Status da mesa"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data do registro"
+          }
+        },
+        "required": [
+          "table_id",
+          "status",
+          "date"
+        ]
+      },
+      "InventoryReport": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do item"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do item"
+          },
+          "quantity_used": {
+            "type": "integer",
+            "description": "Quantidade utilizada"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data do registro"
+          }
+        },
+        "required": [
+          "item_id",
+          "name",
+          "quantity_used",
+          "date"
+        ]
+      },
+      "ReservationInput": {
+        "type": "object",
+        "properties": {
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do usuário (opcional)",
+            "nullable": true
+          },
+          "table_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da mesa (opcional)",
+            "nullable": true
+          },
+          "reservation_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data da reserva"
+          },
+          "number_of_guests": {
+            "type": "integer",
+            "description": "Número de convidados"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notas adicionais",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "cancelled"
+            ],
+            "description": "Status da reserva"
+          }
+        },
+        "required": [
+          "restaurant_id",
+          "reservation_date",
+          "number_of_guests",
+          "status"
+        ]
+      },
+      "ReservationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da reserva"
+          },
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do usuário",
+            "nullable": true
+          },
+          "table_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da mesa",
+            "nullable": true
+          },
+          "reservation_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data da reserva"
+          },
+          "number_of_guests": {
+            "type": "integer",
+            "description": "Número de convidados"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notas adicionais",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "cancelled"
+            ],
+            "description": "Status da reserva"
+          }
+        },
+        "required": [
+          "id",
+          "restaurant_id",
+          "reservation_date",
+          "number_of_guests",
+          "status"
+        ]
+      },
+      "UpdateReservationInput": {
+        "type": "object",
+        "properties": {
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do usuário",
+            "nullable": true
+          },
+          "table_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da mesa",
+            "nullable": true
+          },
+          "reservation_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Data da reserva",
+            "nullable": true
+          },
+          "number_of_guests": {
+            "type": "integer",
+            "description": "Número de convidados",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notas adicionais",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "cancelled"
+            ],
+            "description": "Status da reserva",
+            "nullable": true
+          }
+        },
+        "required": [
+          "restaurant_id"
+        ]
+      },
+      "CustomizationInput": {
+        "type": "object",
+        "properties": {
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "primary_color": {
+            "type": "string",
+            "description": "Cor primária (hexadecimal)"
+          },
+          "secondary_color": {
+            "type": "string",
+            "description": "Cor secundária (hexadecimal)"
+          },
+          "logo_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL do logo",
+            "nullable": true
+          }
+        },
+        "required": [
+          "restaurant_id",
+          "primary_color",
+          "secondary_color"
+        ]
+      },
+      "CustomizationResponse": {
+        "type": "object",
+        "properties": {
+          "restaurant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do restaurante"
+          },
+          "primary_color": {
+            "type": "string",
+            "description": "Cor primária (hexadecimal)"
+          },
+          "secondary_color": {
+            "type": "string",
+            "description": "Cor secundária (hexadecimal)"
+          },
+          "logo_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL do logo",
+            "nullable": true
+          }
+        },
+        "required": [
+          "restaurant_id",
+          "primary_color",
+          "secondary_color"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Mensagem de erro",
+            "nullable": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "msg": {
+                  "type": "string",
+                  "description": "Mensagem de erro específica"
+                },
+                "path": {
+                  "type": "string",
+                  "description": "Campo com erro"
+                },
+                "location": {
+                  "type": "string",
+                  "description": "Local do erro (ex.: body, query)"
+                }
+              }
+            },
+            "description": "Lista de erros detalhados",
+            "nullable": true
+          }
+        }
+      }
+    }
+  }
+}

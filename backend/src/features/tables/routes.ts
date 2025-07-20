@@ -1,10 +1,10 @@
 import {Request, Response, Router} from 'express';
+import {body} from 'express-validator';
 import {TableService} from './service';
 import {QrCodeResponse, Table} from './interfaces';
 import {authMiddleware} from '../../middleware/auth';
 import {handleValidationErrors} from '../../utils/errorHandler';
-import {validateIdParam, validateText, validateUUID} from '../../utils/validator';
-import {body} from 'express-validator';
+import {validateText, validateUUID} from '../../utils/validator';
 
 const router = Router();
 const tableService = new TableService();
@@ -13,17 +13,22 @@ const tableService = new TableService();
 router.post(
     '/',
     [
+        authMiddleware,
+        body('restaurant_id').notEmpty().withMessage('restaurant_id é obrigatório'),
         validateUUID('restaurant_id'),
         body('table_number').isInt({min: 1}).withMessage('Número da mesa deve ser um inteiro positivo'),
+        body('capacity').isInt({min: 1}).withMessage('Capacidade deve ser um número inteiro positivo'),
         handleValidationErrors,
-        authMiddleware,
     ],
     async (req: Request, res: Response) => {
         try {
+            console.log('Criando mesa com dados:', req.body);
             const table: Table = await tableService.createTable(req.body, (req as any).userId);
+            console.log('Mesa criada com sucesso:', table);
             res.status(201).json(table);
         } catch (err: any) {
-            throw err;
+            console.error('Erro ao criar mesa:', err.message);
+            res.status(400).json({message: err.message});
         }
     }
 );
@@ -31,13 +36,16 @@ router.post(
 // Listar Mesas
 router.get(
     '/:restaurantId',
-    [validateIdParam().customSanitizer((value) => value).withMessage('ID do restaurante inválido'), authMiddleware],
+    [authMiddleware, validateUUID('restaurantId'), handleValidationErrors],
     async (req: Request, res: Response) => {
         try {
-            const restaurants: Table[] = await tableService.listTables(req.params.restaurantId, (req as any).userId);
-            res.json(restaurants);
+            console.log(`Listando mesas para restaurantId: ${req.params.restaurantId}`);
+            const tables: Table[] = await tableService.listTables(req.params.restaurantId, (req as any).userId);
+            console.log('Mesas encontradas:', tables);
+            res.json(tables);
         } catch (err: any) {
-            throw err;
+            console.error('Erro ao listar mesas:', err.message);
+            res.status(400).json({message: err.message});
         }
     }
 );
@@ -46,34 +54,43 @@ router.get(
 router.put(
     '/:id',
     [
-        validateIdParam(),
+        authMiddleware,
+        validateUUID('id'),
         body('table_number').optional().isInt({min: 1}).withMessage('Número da mesa deve ser um inteiro positivo'),
         body('status')
             .optional()
             .isIn(['available', 'occupied', 'reserved'])
             .withMessage('Status deve ser available, occupied ou reserved'),
+        body('capacity').optional().isInt({min: 1}).withMessage('Capacidade deve ser um número inteiro positivo'),
         handleValidationErrors,
-        authMiddleware,
     ],
     async (req: Request, res: Response) => {
         try {
+            console.log('Atualizando mesa:', req.params.id, req.body);
             await tableService.updateTable(req.params.id, req.body, (req as any).userId);
             res.json({message: 'Mesa atualizada com sucesso'});
         } catch (err: any) {
-            throw err;
+            console.error('Erro ao atualizar mesa:', err.message);
+            res.status(400).json({message: err.message});
         }
     }
 );
 
 // Excluir Mesa
-router.delete('/:id', [validateIdParam(), handleValidationErrors, authMiddleware], async (req: Request, res: Response) => {
-    try {
-        await tableService.deleteTable(req.params.id, (req as any).userId);
-        res.json({message: 'Mesa excluída com sucesso'});
-    } catch (err: any) {
-        throw err;
+router.delete(
+    '/:id',
+    [authMiddleware, validateUUID('id'), handleValidationErrors],
+    async (req: Request, res: Response) => {
+        try {
+            console.log('Excluindo mesa:', req.params.id);
+            await tableService.deleteTable(req.params.id, (req as any).userId);
+            res.json({message: 'Mesa excluída com sucesso'});
+        } catch (err: any) {
+            console.error('Erro ao excluir mesa:', err.message);
+            res.status(400).json({message: err.message});
+        }
     }
-});
+);
 
 // Validar QR Code
 router.post(
@@ -81,10 +98,13 @@ router.post(
     [validateText('qr_code'), handleValidationErrors],
     async (req: Request, res: Response) => {
         try {
+            console.log('Validando QR code:', req.body.qr_code);
             const response: QrCodeResponse = await tableService.validateQrCode(req.body);
+            console.log('QR code válido:', response);
             res.json(response);
         } catch (err: any) {
-            throw err;
+            console.error('Erro ao validar QR code:', err.message);
+            res.status(400).json({message: err.message});
         }
     }
 );

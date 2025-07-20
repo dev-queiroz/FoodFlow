@@ -4,7 +4,7 @@ import {v4 as uuidv4} from 'uuid';
 
 export class TableService {
     async createTable(dto: CreateTableDto, ownerId: string): Promise<Table> {
-        const {restaurant_id, table_number} = dto;
+        const {restaurant_id, table_number, capacity} = dto;
 
         // Verificar se o restaurante existe e pertence ao dono
         const {data: restaurant, error: restaurantError} = await supabase
@@ -17,6 +17,22 @@ export class TableService {
             throw new Error('Restaurante inválido ou acesso negado');
         }
 
+        // Verificar se o número da mesa já existe no restaurante
+        const {data: existingTable, error: existingError} = await supabase
+            .from('tables')
+            .select('id')
+            .eq('restaurant_id', restaurant_id)
+            .eq('table_number', table_number)
+            .single();
+        if (existingTable) {
+            console.error('Número da mesa já existe para este restaurante');
+            throw new Error('Número da mesa já existe para este restaurante');
+        }
+        if (existingError && existingError.code !== 'PGRST116') {
+            console.error('Erro ao verificar número da mesa:', existingError.message);
+            throw new Error(`Erro ao verificar número da mesa: ${existingError.message}`);
+        }
+
         // Gerar QR code único
         const qr_code = uuidv4();
 
@@ -27,6 +43,7 @@ export class TableService {
                 table_number,
                 qr_code,
                 status: 'available',
+                capacity,
             })
             .select()
             .single();
@@ -40,7 +57,6 @@ export class TableService {
     }
 
     async listTables(restaurantId: string, ownerId: string): Promise<Table[]> {
-        // Verificar se o restaurante pertence ao dono
         const {data: restaurant, error: restaurantError} = await supabase
             .from('restaurants')
             .select('owner_id')
@@ -53,7 +69,7 @@ export class TableService {
 
         const {data, error} = await supabase
             .from('tables')
-            .select('*')
+            .select('id, restaurant_id, table_number, qr_code, status, capacity, created_at, updated_at')
             .eq('restaurant_id', restaurantId);
 
         if (error) {
@@ -65,7 +81,6 @@ export class TableService {
     }
 
     async updateTable(id: string, dto: UpdateTableDto, ownerId: string): Promise<void> {
-        // Verificar se a mesa existe e pertence ao restaurante do dono
         const {data: table, error: tableError} = await supabase
             .from('tables')
             .select('restaurant_id')
@@ -86,11 +101,11 @@ export class TableService {
             throw new Error('Acesso negado: você não é o dono deste restaurante');
         }
 
-        const {table_number, status} = dto;
+        const {table_number, status, capacity} = dto;
 
         const {error} = await supabase
             .from('tables')
-            .update({table_number, status, updated_at: new Date()})
+            .update({table_number, status, capacity, updated_at: new Date()})
             .eq('id', id);
 
         if (error) {
@@ -100,7 +115,6 @@ export class TableService {
     }
 
     async deleteTable(id: string, ownerId: string): Promise<void> {
-        // Verificar se a mesa existe e pertence ao restaurante do dono
         const {data: table, error: tableError} = await supabase
             .from('tables')
             .select('restaurant_id')

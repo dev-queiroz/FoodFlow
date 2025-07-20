@@ -5,6 +5,7 @@ export class RestaurantService {
     async createRestaurant(dto: CreateRestaurantDto, ownerId: string): Promise<Restaurant> {
         const {name, description, address, contact_number} = dto;
 
+        // Criar o restaurante
         const {data, error} = await supabase
             .from('restaurants')
             .insert({
@@ -20,6 +21,17 @@ export class RestaurantService {
         if (error) {
             console.error('Erro ao criar restaurante:', error.message);
             throw new Error(`Erro ao criar restaurante: ${error.message}`);
+        }
+
+        // Atualizar o restaurant_id do usuário na tabela users
+        const {error: userUpdateError} = await supabase
+            .from('users')
+            .update({restaurant_id: data.id})
+            .eq('id', ownerId);
+
+        if (userUpdateError) {
+            console.error('Erro ao atualizar restaurant_id do usuário:', userUpdateError.message);
+            throw new Error(`Erro ao atualizar usuário: ${userUpdateError.message}`);
         }
 
         return data;
