@@ -8,6 +8,7 @@ export interface Reservation {
     status: 'pending' | 'confirmed' | 'cancelled';
     notes: string | null;
     created_at: string;
+    updated_at: string;
 }
 
 export interface ReservationInput {
@@ -17,7 +18,6 @@ export interface ReservationInput {
     reservation_date: string;
     number_of_guests: number;
     notes?: string;
-    status?: 'pending' | 'confirmed' | 'cancelled'; // Adicionado
 }
 
 export interface ReservationFilter {

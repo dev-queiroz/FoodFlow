@@ -22,8 +22,3 @@ export interface RegisterDto {
     role_id: string;
     restaurant_id?: string;
 }
-
-export interface UpdateProfileDto {
-    name?: string;
-    email?: string;
-}

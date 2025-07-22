@@ -3,7 +3,7 @@ import {Customization, CustomizationInput} from './interfaces';
 
 export class CustomizationService {
     async createOrUpdateCustomization(input: CustomizationInput, ownerId: string): Promise<Customization> {
-        const {restaurant_id, primary_color, secondary_color, logo_url} = input;
+        const {restaurant_id, primary_color, secondary_color, logo} = input;
 
         // Validar restaurante e propriedade
         const {data: restaurant, error: restaurantError} = await supabase
@@ -12,7 +12,6 @@ export class CustomizationService {
             .eq('id', restaurant_id)
             .single();
         if (restaurantError || !restaurant || restaurant.owner_id !== ownerId) {
-            console.error('Erro ao validar restaurante:', restaurantError?.message);
             throw new Error('Restaurante inválido ou acesso negado');
         }
 
@@ -25,13 +24,34 @@ export class CustomizationService {
         // Verificar se já existe uma configuração para o restaurante
         const {data: existingSettings, error: fetchError} = await supabase
             .from('restaurant_settings')
-            .select('*')
+            .select('id, logo_url')
             .eq('restaurant_id', restaurant_id)
             .single();
 
         if (fetchError && fetchError.code !== 'PGRST116') {
-            console.error('Erro ao buscar configuração:', fetchError.message);
             throw new Error(`Erro ao buscar configuração: ${fetchError.message}`);
+        }
+
+        let logo_url: string | null = existingSettings?.logo_url || null;
+        if (logo) {
+            if (existingSettings?.logo_url) {
+                const oldFileName = existingSettings.logo_url.split('/').pop();
+                await supabase.storage.from('restaurant-logos').remove([oldFileName!]);
+            }
+            const fileName = `${restaurant_id}/logo_${Date.now()}_${logo.name}`;
+            const {error: uploadError} = await supabase.storage
+                .from('restaurant-logos')
+                .upload(fileName, logo, {
+                    cacheControl: '3600',
+                    contentType: logo.type,
+                });
+            if (uploadError) {
+                throw new Error(`Erro ao fazer upload da logo: ${uploadError.message}`);
+            }
+            const {data: publicUrlData} = supabase.storage
+                .from('restaurant-logos')
+                .getPublicUrl(fileName);
+            logo_url = publicUrlData.publicUrl;
         }
 
         let result;
@@ -53,7 +73,6 @@ export class CustomizationService {
         }
 
         if (result.error) {
-            console.error('Erro ao salvar configuração:', result.error.message);
             throw new Error(`Erro ao salvar configuração: ${result.error.message}`);
         }
 
@@ -68,7 +87,6 @@ export class CustomizationService {
             .single();
 
         if (error && error.code !== 'PGRST116') {
-            console.error('Erro ao buscar configuração:', error.message);
             throw new Error(`Erro ao buscar configuração: ${error.message}`);
         }
 
@@ -82,8 +100,22 @@ export class CustomizationService {
             .eq('id', restaurantId)
             .single();
         if (restaurantError || !restaurant || restaurant.owner_id !== ownerId) {
-            console.error('Erro ao validar restaurante:', restaurantError?.message);
             throw new Error('Restaurante inválido ou acesso negado');
+        }
+
+        const {data: settings, error: settingsError} = await supabase
+            .from('restaurant_settings')
+            .select('logo_url')
+            .eq('restaurant_id', restaurantId)
+            .single();
+
+        if (settingsError && settingsError.code !== 'PGRST116') {
+            throw new Error(`Erro ao buscar configuração: ${settingsError.message}`);
+        }
+
+        if (settings?.logo_url) {
+            const fileName = settings.logo_url.split('/').pop();
+            await supabase.storage.from('restaurant-logos').remove([fileName!]);
         }
 
         const {error} = await supabase
@@ -92,7 +124,6 @@ export class CustomizationService {
             .eq('restaurant_id', restaurantId);
 
         if (error) {
-            console.error('Erro ao excluir configuração:', error.message);
             throw new Error(`Erro ao excluir configuração: ${error.message}`);
         }
     }

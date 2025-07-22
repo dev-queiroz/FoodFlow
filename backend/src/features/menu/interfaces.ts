@@ -7,6 +7,7 @@ export interface MenuItem {
     price: number;
     is_available: boolean;
     created_at: string;
+    updated_at: string;
 }
 
 export interface MenuItemInput {
@@ -24,6 +25,7 @@ export interface MenuCategory {
     name: string;
     description: string | null;
     created_at: string;
+    updated_at: string;
 }
 
 export interface MenuCategoryInput {

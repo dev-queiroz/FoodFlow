@@ -13,6 +13,7 @@ import orderRoutes from './features/orders/routes';
 import reportRoutes from './features/reports/routes';
 import reservationRoutes from './features/reservations/routes';
 import customizationRoutes from './features/customization/routes';
+import fileUpload from 'express-fileupload';
 import {handleErrors} from './utils/errorHandler';
 import {initializeWebSocket} from './websocket';
 
@@ -20,6 +21,11 @@ dotenv.config();
 
 const app = express();
 const server = createServer(app);
+
+app.use(fileUpload({
+    limits: { fileSize: 1024 * 1024 },
+    abortOnLimit: true,
+}));
 app.use(express.json());
 
 // Configurar Swagger

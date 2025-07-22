@@ -2,7 +2,7 @@ export interface Table {
     id: string;
     restaurant_id: string;
     table_number: number;
-    qr_code: string;
+    qr_code: string | null; // Sincronizado com qr_codes.code
     status: 'available' | 'occupied' | 'reserved';
     capacity: number;
     created_at: string;

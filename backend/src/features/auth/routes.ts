@@ -1,18 +1,27 @@
 import {Request, Response, Router} from 'express';
 import {body} from 'express-validator';
+import rateLimit from 'express-rate-limit';
 import {AuthService} from './service';
 import {AuthResponse} from './interfaces';
-import {authMiddleware} from '../../middleware/auth';
-import {validateEmail, validateName, validatePassword, validateUUID} from '../../utils/validator';
+import {validateEmail, validateName, validatePassword} from '../../utils/validator';
 import {handleValidationErrors} from '../../utils/errorHandler';
 
 const router = Router();
 const authService = new AuthService();
 
-const adminRoleId = '09603787-2fca-4e4c-9e6c-7b349232c512';
+const allowedRoles = [
+    '09603787-2fca-4e4c-9e6c-7b349232c512', // dono
+    'e7256f9b-9f57-4fde-b15e-0bdefb0390f6', // cliente
+];
+
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 5, // 5 tentativas por IP
+    message: 'Muitas tentativas de login. Tente novamente em 15 minutos.',
+});
 
 // Login
-router.post('/login', [
+router.post('/login', loginLimiter, [
     validateEmail(),
     validatePassword(),
     handleValidationErrors,
@@ -32,15 +41,13 @@ router.post(
         validateEmail(),
         validatePassword(),
         validateName(),
-        validateUUID('role_id'),
+        body('role_id').isIn(allowedRoles).withMessage('Papel inválido: apenas dono ou cliente podem se cadastrar'),
         body('restaurant_id').custom((value, {req}) => {
-            // Se role_id for admin, restaurant_id pode ser null
-            if (req.body.role_id === adminRoleId) {
-                return true; // Aceita null ou undefined
+            if (value && req.body.role_id === 'e7256f9b-9f57-4fde-b15e-0bdefb0390f6') {
+                throw new Error('Clientes não podem ser vinculados a um restaurante no cadastro');
             }
-            // Para outros papéis, restaurant_id deve ser um UUID válido
-            if (!value || typeof value !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
-                throw new Error('restaurant_id inválido');
+            if (req.body.role_id === '09603787-2fca-4e4c-9e6c-7b349232c512' && value) {
+                throw new Error('Donos não podem ser vinculados a um restaurante no cadastro');
             }
             return true;
         }),
@@ -69,19 +76,13 @@ router.post('/reset-password', [
     }
 });
 
-// Atualizar Perfil
-router.put(
-    '/profile',
-    [
-        validateName(true),
-        validateEmail().optional(),
+// Logout
+router.post('/logout', [
         handleValidationErrors,
-        authMiddleware,
-    ],
-    async (req: Request, res: Response) => {
+    ], async (req: Request, res: Response) => {
         try {
-            await authService.updateProfile((req as any).userId, req.body);
-            res.json({message: 'Perfil atualizado com sucesso'});
+            await authService.logout();
+            res.json({message: 'Logout realizado com sucesso'});
         } catch (err: any) {
             throw err;
         }

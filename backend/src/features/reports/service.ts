@@ -1,5 +1,12 @@
 import {supabase} from '../../config/supabase';
-import {InventoryReport, OccupancyReport, OrderItemWithMenu, ReportFilter, SalesReport} from './interfaces';
+import {
+    InventoryReport,
+    OccupancyReport,
+    OrderItemWithMenu,
+    ReportFilter,
+    SalesReport,
+    SessionReport
+} from './interfaces';
 import PDFDocument from 'pdfkit';
 import {createObjectCsvStringifier} from 'csv-writer';
 import {PassThrough} from 'stream';
@@ -42,9 +49,7 @@ export class ReportService {
         const {data: topItems, error: itemsError} = await supabase
             .from('order_items')
             .select('item_id, quantity, price, menu_items!inner(name)')
-            .in('order_id', orders.map(order => order.id))
-            .eq('orders.restaurant_id', restaurantId) as unknown as { data: OrderItemWithMenu[], error: any };
-
+            .in('order_id', orders.map(order => order.id)) as unknown as { data: OrderItemWithMenu[], error: any };
         if (itemsError) {
             console.error('Erro ao buscar itens:', itemsError.message);
             throw new Error(`Erro ao buscar itens: ${itemsError.message}`);
@@ -89,15 +94,15 @@ export class ReportService {
 
         let query = supabase
             .from('sessions')
-            .select('created_at, closed_at')
+            .select('start_time, end_time')
             .eq('restaurant_id', restaurantId)
-            .not('closed_at', 'is', null);
+            .not('end_time', 'is', null);
 
         if (filter.start_date) {
-            query = query.gte('created_at', filter.start_date);
+            query = query.gte('start_time', filter.start_date);
         }
         if (filter.end_date) {
-            query = query.lte('created_at', filter.end_date);
+            query = query.lte('start_time', filter.end_date);
         }
 
         const {data: sessions, error: sessionsError} = await query;
@@ -108,8 +113,8 @@ export class ReportService {
 
         const totalSessions = sessions.length;
         const totalDuration = sessions.reduce((sum, session) => {
-            const start = new Date(session.created_at).getTime();
-            const end = new Date(session.closed_at).getTime();
+            const start = new Date(session.start_time).getTime();
+            const end = new Date(session.end_time).getTime();
             return sum + (end - start);
         }, 0);
         const averageSessionDuration = totalSessions > 0 ? totalDuration / totalSessions / 1000 / 60 : 0;
@@ -118,7 +123,6 @@ export class ReportService {
             .from('tables')
             .select('id', {count: 'exact'})
             .eq('restaurant_id', restaurantId);
-
         if (tableError) {
             console.error('Erro ao contar mesas:', tableError.message);
             throw new Error(`Erro ao contar mesas: ${tableError.message}`);
@@ -128,6 +132,50 @@ export class ReportService {
             total_sessions: totalSessions,
             average_session_duration: averageSessionDuration,
             table_count: tableCount || null,
+        };
+    }
+
+    async generateSessionReport(restaurantId: string, ownerId: string, filter: ReportFilter): Promise<SessionReport> {
+        const {data: restaurant, error: restaurantError} = await supabase
+            .from('restaurants')
+            .select('owner_id')
+            .eq('id', restaurantId)
+            .single();
+        if (restaurantError || !restaurant || restaurant.owner_id !== ownerId) {
+            console.error('Erro ao validar restaurante:', restaurantError?.message);
+            throw new Error('Restaurante inválido ou acesso negado');
+        }
+
+        let query = supabase
+            .from('session_reports')
+            .select('restaurant_id, table_id, report_date, session_count, total_duration, order_count')
+            .eq('restaurant_id', restaurantId);
+
+        if (filter.start_date) {
+            query = query.gte('report_date', filter.start_date);
+        }
+        if (filter.end_date) {
+            query = query.lte('report_date', filter.end_date);
+        }
+
+        const {data: reports, error: reportsError} = await query;
+        if (reportsError) {
+            console.error('Erro ao buscar relatórios de sessões:', reportsError.message);
+            throw new Error(`Erro ao buscar relatórios de sessões: ${reportsError.message}`);
+        }
+
+        const formattedReports = reports.map(report => ({
+            ...report,
+            total_duration: parseFloat(report.total_duration.match(/[\d.]+/)?.[0] || '0') / 60, // Converter para minutos
+        }));
+
+        const totalSessions = formattedReports.reduce((sum, report) => sum + report.session_count, 0);
+        const totalOrders = formattedReports.reduce((sum, report) => sum + report.order_count, 0);
+
+        return {
+            reports: formattedReports,
+            total_sessions: totalSessions,
+            total_orders: totalOrders,
         };
     }
 
@@ -183,7 +231,6 @@ export class ReportService {
         const stream = new PassThrough();
 
         doc.pipe(stream);
-
         doc.fontSize(20).text('Relatório de Vendas', {align: 'center'});
         doc.moveDown();
         doc.fontSize(12).text(`Total de Vendas: R$${report.total_sales.toFixed(2)}`);
@@ -194,13 +241,10 @@ export class ReportService {
         report.top_items.forEach(item => {
             doc.text(`- ${item.name}: ${item.quantity_sold} unidades, R$${item.total_revenue.toFixed(2)}`);
         });
-
         doc.end();
 
         stream.on('data', chunk => buffers.push(chunk));
-        return new Promise(resolve => {
-            stream.on('end', () => resolve(Buffer.concat(buffers)));
-        });
+        return new Promise(resolve => stream.on('end', () => resolve(Buffer.concat(buffers))));
     }
 
     async generateOccupancyReportPDF(report: OccupancyReport): Promise<Buffer> {
@@ -209,19 +253,36 @@ export class ReportService {
         const stream = new PassThrough();
 
         doc.pipe(stream);
-
         doc.fontSize(20).text('Relatório de Ocupação', {align: 'center'});
         doc.moveDown();
         doc.fontSize(12).text(`Total de Sessões: ${report.total_sessions}`);
         doc.text(`Duração Média das Sessões: ${report.average_session_duration.toFixed(2)} minutos`);
         doc.text(`Número de Mesas: ${report.table_count ?? 'N/A'}`);
-
         doc.end();
 
         stream.on('data', chunk => buffers.push(chunk));
-        return new Promise(resolve => {
-            stream.on('end', () => resolve(Buffer.concat(buffers)));
+        return new Promise(resolve => stream.on('end', () => resolve(Buffer.concat(buffers))));
+    }
+
+    async generateSessionReportPDF(report: SessionReport): Promise<Buffer> {
+        const doc = new PDFDocument();
+        const buffers: Buffer[] = [];
+        const stream = new PassThrough();
+
+        doc.pipe(stream);
+        doc.fontSize(20).text('Relatório de Sessões', {align: 'center'});
+        doc.moveDown();
+        doc.fontSize(12).text(`Total de Sessões: ${report.total_sessions}`);
+        doc.text(`Total de Pedidos: ${report.total_orders}`);
+        doc.moveDown();
+        doc.text('Relatórios por Mesa e Data:');
+        report.reports.forEach(r => {
+            doc.text(`- Mesa ${r.table_id}, Data ${r.report_date}: ${r.session_count} sessões, ${r.total_duration.toFixed(2)} min, ${r.order_count} pedidos`);
         });
+        doc.end();
+
+        stream.on('data', chunk => buffers.push(chunk));
+        return new Promise(resolve => stream.on('end', () => resolve(Buffer.concat(buffers))));
     }
 
     async generateInventoryReportPDF(report: InventoryReport): Promise<Buffer> {
@@ -230,7 +291,6 @@ export class ReportService {
         const stream = new PassThrough();
 
         doc.pipe(stream);
-
         doc.fontSize(20).text('Relatório de Estoque', {align: 'center'});
         doc.moveDown();
         doc.fontSize(12).text(`Itens com Estoque Baixo: ${report.low_stock_count}`);
@@ -239,13 +299,10 @@ export class ReportService {
         report.items.forEach(item => {
             doc.text(`- ${item.name}: ${item.quantity} ${item.unit} ${item.needs_restock ? '(Reposição Necessária)' : ''}`);
         });
-
         doc.end();
 
         stream.on('data', chunk => buffers.push(chunk));
-        return new Promise(resolve => {
-            stream.on('end', () => resolve(Buffer.concat(buffers)));
-        });
+        return new Promise(resolve => stream.on('end', () => resolve(Buffer.concat(buffers))));
     }
 
     async generateSalesReportCSV(report: SalesReport): Promise<string> {
@@ -286,6 +343,30 @@ export class ReportService {
                 table_count: report.table_count ?? 'N/A',
             },
         ]);
+    }
+
+    async generateSessionReportCSV(report: SessionReport): Promise<string> {
+        const csvStringifier = createObjectCsvStringifier({
+            header: [
+                {id: 'restaurant_id', title: 'Restaurante ID'},
+                {id: 'table_id', title: 'Mesa ID'},
+                {id: 'report_date', title: 'Data do Relatório'},
+                {id: 'session_count', title: 'Contagem de Sessões'},
+                {id: 'total_duration', title: 'Duração Total (min)'},
+                {id: 'order_count', title: 'Contagem de Pedidos'},
+            ],
+        });
+
+        return csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(
+            report.reports.map(r => ({
+                restaurant_id: r.restaurant_id,
+                table_id: r.table_id,
+                report_date: r.report_date,
+                session_count: r.session_count,
+                total_duration: r.total_duration.toFixed(2),
+                order_count: r.order_count,
+            }))
+        );
     }
 
     async generateInventoryReportCSV(report: InventoryReport): Promise<string> {
