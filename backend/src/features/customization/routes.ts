@@ -4,7 +4,7 @@ import {CustomizationService} from './service';
 import {authMiddleware} from '../../middleware/auth';
 import {validateUUID} from '../../utils/validator';
 import {handleValidationErrors} from '../../utils/errorHandler';
-import fileUpload from "express-fileupload";
+import fileUpload from 'express-fileupload';
 
 const router = Router();
 const customizationService = new CustomizationService();
@@ -15,14 +15,18 @@ router.post(
     '/',
     [
         authMiddleware,
-        body('role_id').isIn(allowedOwnerRole).withMessage('Apenas donos podem criar ou atualizar configurações'),
         validateUUID('restaurant_id'),
         body('primary_color').matches(/^#[0-9A-Fa-f]{6}$/).withMessage('Cor primária deve ser hexadecimal (#RRGGBB)'),
         body('secondary_color').matches(/^#[0-9A-Fa-f]{6}$/).withMessage('Cor secundária deve ser hexadecimal (#RRGGBB)'),
         body('logo').custom((value, {req}) => {
-            const files = (req as any).files; // Tipagem temporária para compatibilidade
-            if (files?.logo && !['image/jpeg', 'image/png'].includes(files.logo.mimetype)) {
-                throw new Error('Logo deve ser JPEG ou PNG');
+            const files = (req as any).files; // Tipagem temporária
+            if (files?.logo) {
+                if (!['image/jpeg', 'image/png'].includes(files.logo.mimetype)) {
+                    throw new Error('Logo deve ser JPEG ou PNG');
+                }
+                if (files.logo.size > 2 * 1024 * 1024) { // Limite de 2MB
+                    throw new Error('Logo deve ter no máximo 2MB');
+                }
             }
             return true;
         }),
@@ -30,10 +34,13 @@ router.post(
     ],
     async (req: Request, res: Response) => {
         try {
+            if (!allowedOwnerRole.includes((req as any).user.role_id)) {
+                return res.status(403).json({message: 'Apenas donos podem criar ou atualizar configurações'});
+            }
             const files = (req as any).files; // Tipagem temporária
             const input = {
                 ...req.body,
-                logo: files?.logo as fileUpload.UploadedFile, // Usar tipo do express-fileupload
+                logo: files?.logo as fileUpload.UploadedFile,
             };
             const customization = await customizationService.createOrUpdateCustomization(input, (req as any).userId);
             res.status(201).json(customization);
@@ -45,7 +52,7 @@ router.post(
 
 router.get(
     '/:restaurantId',
-    [validateUUID('restaurantId'), handleValidationErrors],
+    [validateUUID('restaurantId', false, true), handleValidationErrors],
     async (req: Request, res: Response) => {
         try {
             const customization = await customizationService.getCustomization(req.params.restaurantId);
@@ -58,14 +65,12 @@ router.get(
 
 router.delete(
     '/:restaurantId',
-    [
-        authMiddleware,
-        body('role_id').isIn(allowedOwnerRole).withMessage('Apenas donos podem excluir configurações'),
-        validateUUID('restaurantId'),
-        handleValidationErrors,
-    ],
+    [authMiddleware, validateUUID('restaurantId', false, true), handleValidationErrors],
     async (req: Request, res: Response) => {
         try {
+            if (!allowedOwnerRole.includes((req as any).user.role_id)) {
+                return res.status(403).json({message: 'Apenas donos podem excluir configurações'});
+            }
             await customizationService.deleteCustomization(req.params.restaurantId, (req as any).userId);
             res.status(204).send();
         } catch (err: any) {

@@ -88,6 +88,17 @@ export class AuthService {
     }
 
     async resetPassword(email: string): Promise<void> {
+        const {data: userData, error: userError} = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', email)
+            .single();
+
+        if (userError || !userData) {
+            console.error('Erro ao buscar usuário para redefinição de senha:', userError?.message || 'Usuário não encontrado');
+            throw new Error('E-mail não cadastrado');
+        }
+
         const {error} = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: 'http://localhost:3000/reset-password',
         });

@@ -108,7 +108,6 @@ export class TableService {
     }
 
     async updateTable(id: string, dto: UpdateTableDto, userId: string, roleId: string): Promise<void> {
-        // Definir tipo explícito para a resposta da consulta
         type TableSelect = {
             restaurant_id: string;
             table_number: number;
@@ -221,13 +220,14 @@ export class TableService {
         }
     }
 
-    async validateQrCode(dto: ValidateQrCodeDto, roleId: string): Promise<QrCodeResponse> {
+    async validateQrCode(dto: ValidateQrCodeDto, roleId: string, userId: string): Promise<QrCodeResponse> {
         type QrCodeSelectResponse = {
             table_id: string;
+            active_session_id: string | null;
             tables: {
                 restaurant_id: string;
                 table_number: number;
-            }
+            };
         };
 
         if (roleId !== 'e7256f9b-9f57-4fde-b15e-0bdefb0390f6') {
@@ -238,7 +238,7 @@ export class TableService {
 
         const {data, error} = await supabase
             .from('qr_codes')
-            .select('table_id, tables!inner(restaurant_id, table_number)')
+            .select('table_id, active_session_id, tables!inner(restaurant_id, table_number)')
             .eq('code', qr_code)
             .single() as { data: QrCodeSelectResponse | null, error: any };
 
@@ -246,10 +246,113 @@ export class TableService {
             throw new Error('QR code inválido');
         }
 
+        if (data.active_session_id) {
+            // Verificar se a sessão ainda é válida
+            const {
+                data: sessionData,
+                error: sessionError
+            } = await supabase.auth.admin.getUserById(data.active_session_id);
+            if (sessionError || !sessionData.user || !sessionData.user.last_sign_in_at) {
+                // Sessão inválida, limpar active_session_id
+                await supabase.from('qr_codes').update({active_session_id: null}).eq('code', qr_code);
+            } else {
+                throw new Error('QR code já está em uso por outra sessão');
+            }
+        }
+
+        // Associar o QR code à sessão do cliente
+        const {error: updateError} = await supabase
+            .from('qr_codes')
+            .update({active_session_id: userId})
+            .eq('code', qr_code);
+
+        if (updateError) {
+            throw new Error(`Erro ao associar QR code à sessão: ${updateError.message}`);
+        }
+
         return {
             table_id: data.table_id,
             restaurant_id: data.tables.restaurant_id,
             table_number: data.tables.table_number,
         };
+    }
+
+    async closeSession(qrCode: string, userId: string, roleId: string): Promise<void> {
+        const allowedRoles = [
+            'e7256f9b-9f57-4fde-b15e-0bdefb0390f6', // Cliente
+            '3f3aed51-f815-40dc-a372-a31de658319f', // Garçom
+            '09603787-2fca-4e4c-9e6c-7b349232c512', // Dono
+        ];
+
+        if (!allowedRoles.includes(roleId)) {
+            throw new Error('Acesso negado: apenas clientes, garçons ou donos podem fechar sessões');
+        }
+
+        type QrCodeSelectResponse = {
+            table_id: string;
+            active_session_id: string | null;
+            tables: {
+                restaurant_id: string;
+            };
+        };
+
+        const {data: qrCodeData, error: qrCodeError} = await supabase
+            .from('qr_codes')
+            .select('table_id, active_session_id, tables!inner(restaurant_id)')
+            .eq('code', qrCode)
+            .single() as { data: QrCodeSelectResponse | null, error: any };
+
+        if (qrCodeError || !qrCodeData) {
+            throw new Error('QR code inválido');
+        }
+
+        if (roleId === 'e7256f9b-9f57-4fde-b15e-0bdefb0390f6') {
+            // Cliente só pode fechar sua própria sessão
+            if (qrCodeData.active_session_id !== userId) {
+                throw new Error('Acesso negado: você não está associado a esta sessão');
+            }
+        } else {
+            // Garçom ou dono: verificar vínculo com o restaurante
+            const restaurantId = qrCodeData.tables.restaurant_id;
+            if (roleId === '09603787-2fca-4e4c-9e6c-7b349232c512') {
+                const {data: restaurant, error: restaurantError} = await supabase
+                    .from('restaurants')
+                    .select('owner_id')
+                    .eq('id', restaurantId)
+                    .single();
+                if (restaurantError || !restaurant || restaurant.owner_id !== userId) {
+                    throw new Error('Acesso negado: você não é o dono deste restaurante');
+                }
+            } else if (roleId === '3f3aed51-f815-40dc-a372-a31de658319f') {
+                const {data: user, error: userError} = await supabase
+                    .from('users')
+                    .select('restaurant_id')
+                    .eq('id', userId)
+                    .single();
+                if (userError || !user || user.restaurant_id !== restaurantId) {
+                    throw new Error('Acesso negado: você não está vinculado a este restaurante');
+                }
+            }
+        }
+
+        // Limpar active_session_id
+        const {error: updateQrError} = await supabase
+            .from('qr_codes')
+            .update({active_session_id: null})
+            .eq('code', qrCode);
+
+        if (updateQrError) {
+            throw new Error(`Erro ao fechar sessão: ${updateQrError.message}`);
+        }
+
+        // Atualizar status da mesa para available
+        const {error: updateTableError} = await supabase
+            .from('tables')
+            .update({status: 'available', updated_at: new Date()})
+            .eq('id', qrCodeData.table_id);
+
+        if (updateTableError) {
+            throw new Error(`Erro ao atualizar status da mesa: ${updateTableError.message}`);
+        }
     }
 }

@@ -171,15 +171,6 @@ export class RestaurantService {
             throw new Error(`Erro ao atualizar usuário: ${userUpdateError.message}`);
         }
 
-        // Excluir todos os pratos associados ao restaurante
-        const {error: dishesError} = await supabase
-            .from('dishes')
-            .delete()
-            .eq('restaurant_id', id);
-        if (dishesError) {
-            throw new Error(`Erro ao excluir pratos do restaurante: ${dishesError.message}`);
-        }
-
         // Excluir todos os pedidos associados ao restaurante
         const {error: ordersError} = await supabase
             .from('orders')

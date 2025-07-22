@@ -1,0 +1,110 @@
+# Use {{restaurant_id}} de restaurants.http
+# Requer um arquivo de logo (logo.png ou logo.jpg) para testes de upload
+
+### 1. Create Customization (Sucesso - Dono)
+POST http://localhost:3000/customizations
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6InZ4d09QWjdMTG9kSFpkckoiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3N3ZnpidnppbmdscXNna3l5aHh4LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIyMzcwZjhhNC05ZTgxLTRkMjUtYjY5Ny1mZWUxMjg5MjExMDkiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzUzMjEzNTE4LCJpYXQiOjE3NTMyMDk5MTgsImVtYWlsIjoiZGV2LnF1ZWlyb3owNUBnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoiZGV2LnF1ZWlyb3owNUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6IkRvbm8gVGVzdGUiLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInN1YiI6IjIzNzBmOGE0LTllODEtNGQyNS1iNjk3LWZlZTEyODkyMTEwOSJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzUzMjA5OTE4fV0sInNlc3Npb25faWQiOiIyNDdlZDdlZC0yOTQxLTQ4NmUtOTlmMy02OWRlZmE5YTFhOTQiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.o08Xco4u8oQYyXtnuckWailyLiO-cY0P8k2iHAeX_9s
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="restaurant_id"
+
+{{restaurant_id}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="primary_color"
+
+#FF5733
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="secondary_color"
+
+#33FF57
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="logo"; filename="logo.png"
+Content-Type: image/png
+
+< ./logo.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+# Espera: 201, { "id": "...", "restaurant_id": "{{restaurant_id}}", "primary_color": "#FF5733", "secondary_color": "#33FF57", "logo_url": "...", "created_at": "..." }
+
+### 2. Create Customization (Erro - Sem permissão, Garçom)
+POST http://localhost:3000/customizations
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6InZ4d09QWjdMTG9kSFpkckoiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3N3ZnpidnppbmdscXNna3l5aHh4LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI1M2FkMzFkMC03YjNjLTRkNTQtOTA5Ny1lZGQxMDBmYjYzYTUiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzUzMjEzNTUwLCJpYXQiOjE3NTMyMDk5NTAsImVtYWlsIjoib2xpdmVpcmF2YWxkaXJlbmU3NDZAZ21haWwuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbCI6Im9saXZlaXJhdmFsZGlyZW5lNzQ2QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiR2Fyw6dvbSBUZXN0ZSIsInBob25lX3ZlcmlmaWVkIjpmYWxzZSwic3ViIjoiNTNhZDMxZDAtN2IzYy00ZDU0LTkwOTctZWRkMTAwZmI2M2E1In0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NTMyMDk5NTB9XSwic2Vzc2lvbl9pZCI6ImZiNDliZjkxLTc3OWQtNDVhNS04MTE5LTUyMTRiNWU2MDgxOCIsImlzX2Fub255bW91cyI6ZmFsc2V9.68TGZ_Lrs_B2Eez4avTnRp-9J3SMeJT1g5MbT7YX4tk
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="restaurant_id"
+
+{{restaurant_id}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="primary_color"
+
+#FF5733
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="secondary_color"
+
+#33FF57
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+# Espera: 403, { "message": "Apenas donos podem criar ou atualizar configurações" }
+
+### 3. Create Customization (Erro - Cor inválida)
+POST http://localhost:3000/customizations
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6InZ4d09QWjdMTG9kSFpkckoiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3N3ZnpidnppbmdscXNna3l5aHh4LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIyMzcwZjhhNC05ZTgxLTRkMjUtYjY5Ny1mZWUxMjg5MjExMDkiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzUzMjEzNTE4LCJpYXQiOjE3NTMyMDk5MTgsImVtYWlsIjoiZGV2LnF1ZWlyb3owNUBnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoiZGV2LnF1ZWlyb3owNUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6IkRvbm8gVGVzdGUiLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInN1YiI6IjIzNzBmOGE0LTllODEtNGQyNS1iNjk3LWZlZTEyODkyMTEwOSJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzUzMjA5OTE4fV0sInNlc3Npb25faWQiOiIyNDdlZDdlZC0yOTQxLTQ4NmUtOTlmMy02OWRlZmE5YTFhOTQiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.o08Xco4u8oQYyXtnuckWailyLiO-cY0P8k2iHAeX_9s
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="restaurant_id"
+
+{{restaurant_id}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="primary_color"
+
+#ZZZZZZ
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="secondary_color"
+
+#33FF57
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+# Espera: 400, { "message": "Cor primária deve ser hexadecimal (#RRGGBB)" }
+
+### 4. Update Customization (Sucesso - Dono)
+POST http://localhost:3000/customizations
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6InZ4d09QWjdMTG9kSFpkckoiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3N3ZnpidnppbmdscXNna3l5aHh4LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIyMzcwZjhhNC05ZTgxLTRkMjUtYjY5Ny1mZWUxMjg5MjExMDkiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzUzMjEzNTE4LCJpYXQiOjE3NTMyMDk5MTgsImVtYWlsIjoiZGV2LnF1ZWlyb3owNUBnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoiZGV2LnF1ZWlyb3owNUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6IkRvbm8gVGVzdGUiLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInN1YiI6IjIzNzBmOGE0LTllODEtNGQyNS1iNjk3LWZlZTEyODkyMTEwOSJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzUzMjA5OTE4fV0sInNlc3Npb25faWQiOiIyNDdlZDdlZC0yOTQxLTQ4NmUtOTlmMy02OWRlZmE5YTFhOTQiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.o08Xco4u8oQYyXtnuckWailyLiO-cY0P8k2iHAeX_9s
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="restaurant_id"
+
+{{restaurant_id}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="primary_color"
+
+#123456
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="secondary_color"
+
+#654321
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+# Espera: 201, { "id": "...", "restaurant_id": "{{restaurant_id}}", "primary_color": "#123456", "secondary_color": "#654321", "logo_url": "...", "created_at": "..." }
+
+### 5. Get Customization (Sucesso)
+GET http://localhost:3000/customizations/{{restaurant_id}}
+# Espera: 200, { "id": "...", "restaurant_id": "{{restaurant_id}}", "primary_color": "#123456", "secondary_color": "#654321", "logo_url": "...", "created_at": "..." }
+
+### 6. Get Customization (Sucesso - Restaurante sem configuração)
+GET http://localhost:3000/customizations/00000000-0000-0000-0000-000000000000
+# Espera: 200, null
+
+### 7. Delete Customization (Sucesso - Dono)
+DELETE http://localhost:3000/customizations/{{restaurant_id}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6InZ4d09QWjdMTG9kSFpkckoiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3N3ZnpidnppbmdscXNna3l5aHh4LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIyMzcwZjhhNC05ZTgxLTRkMjUtYjY5Ny1mZWUxMjg5MjExMDkiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzUzMjEzNTE4LCJpYXQiOjE3NTMyMDk5MTgsImVtYWlsIjoiZGV2LnF1ZWlyb3owNUBnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoiZGV2LnF1ZWlyb3owNUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6IkRvbm8gVGVzdGUiLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInN1YiI6IjIzNzBmOGE0LTllODEtNGQyNS1iNjk3LWZlZTEyODkyMTEwOSJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzUzMjA5OTE4fV0sInNlc3Npb25faWQiOiIyNDdlZDdlZC0yOTQxLTQ4NmUtOTlmMy02OWRlZmE5YTFhOTQiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.o08Xco4u8oQYyXtnuckWailyLiO-cY0P8k2iHAeX_9s
+# Espera: 204, {}
+
+### 8. Delete Customization (Erro - Sem permissão, Garçom)
+DELETE http://localhost:3000/customizations/{{restaurant_id}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6InZ4d09QWjdMTG9kSFpkckoiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3N3ZnpidnppbmdscXNna3l5aHh4LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI1M2FkMzFkMC03YjNjLTRkNTQtOTA5Ny1lZGQxMDBmYjYzYTUiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzUzMjEzNTUwLCJpYXQiOjE3NTMyMDk5NTAsImVtYWlsIjoib2xpdmVpcmF2YWxkaXJlbmU3NDZAZ21haWwuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbCI6Im9saXZlaXJhdmFsZGlyZW5lNzQ2QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiR2Fyw6dvbSBUZXN0ZSIsInBob25lX3ZlcmlmaWVkIjpmYWxzZSwic3ViIjoiNTNhZDMxZDAtN2IzYy00ZDU0LTkwOTctZWRkMTAwZmI2M2E1In0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NTMyMDk5NTB9XSwic2Vzc2lvbl9pZCI6ImZiNDliZjkxLTc3OWQtNDVhNS04MTE5LTUyMTRiNWU2MDgxOCIsImlzX2Fub255bW91cyI6ZmFsc2V9.68TGZ_Lrs_B2Eez4avTnRp-9J3SMeJT1g5MbT7YX4tk
+# Espera: 403, { "message": "Apenas donos podem excluir configurações" }
+
+### 9. Delete Customization (Erro - Restaurante inválido)
+DELETE http://localhost:3000/customizations/00000000-0000-0000-0000-000000000000
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6InZ4d09QWjdMTG9kSFpkckoiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3N3ZnpidnppbmdscXNna3l5aHh4LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIyMzcwZjhhNC05ZTgxLTRkMjUtYjY5Ny1mZWUxMjg5MjExMDkiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzUzMjEzNTE4LCJpYXQiOjE3NTMyMDk5MTgsImVtYWlsIjoiZGV2LnF1ZWlyb3owNUBnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoiZGV2LnF1ZWlyb3owNUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6IkRvbm8gVGVzdGUiLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInN1YiI6IjIzNzBmOGE0LTllODEtNGQyNS1iNjk3LWZlZTEyODkyMTEwOSJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzUzMjA5OTE4fV0sInNlc3Npb25faWQiOiIyNDdlZDdlZC0yOTQxLTQ4NmUtOTlmMy02OWRlZmE5YTFhOTQiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.o08Xco4u8oQYyXtnuckWailyLiO-cY0P8k2iHAeX_9s
+# Espera: 400, { "message": "Restaurante inválido ou acesso negado" }

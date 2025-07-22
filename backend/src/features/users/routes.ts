@@ -18,7 +18,6 @@ router.post(
     '/',
     [
         authMiddleware,
-        body('role_id').isIn(['09603787-2fca-4e4c-9e6c-7b349232c512']).withMessage('Apenas donos podem criar usuários'),
         validateText('email'),
         validateText('name', true),
         body('role_id').isIn(allowedRoles).withMessage('Papel inválido: apenas cozinheiro ou garçom'),
@@ -27,6 +26,9 @@ router.post(
     ],
     async (req: Request, res: Response) => {
         try {
+            if ((req as any).user.role_id !== '09603787-2fca-4e4c-9e6c-7b349232c512') {
+                return res.status(403).json({message: 'Apenas donos podem criar usuários'});
+            }
             const user: User = await userService.createUser(req.body, (req as any).userId);
             res.status(201).json(user);
         } catch (err: any) {
@@ -37,14 +39,12 @@ router.post(
 
 router.get(
     '/:restaurantId',
-    [
-        authMiddleware,
-        body('role_id').isIn(['09603787-2fca-4e4c-9e6c-7b349232c512']).withMessage('Apenas donos podem listar usuários'),
-        validateUUID('restaurantId'),
-        handleValidationErrors,
-    ],
+    [authMiddleware, validateUUID('restaurantId', false, true), handleValidationErrors], // Corrigido para validar params
     async (req: Request, res: Response) => {
         try {
+            if ((req as any).user.role_id !== '09603787-2fca-4e4c-9e6c-7b349232c512') {
+                return res.status(403).json({message: 'Apenas donos podem listar usuários'});
+            }
             const users: User[] = await userService.listUsers(req.params.restaurantId, (req as any).userId);
             res.json(users);
         } catch (err: any) {
@@ -55,7 +55,7 @@ router.get(
 
 router.get(
     '/user/:id',
-    [authMiddleware, validateUUID('id'), handleValidationErrors],
+    [authMiddleware, validateUUID('id', false, true), handleValidationErrors],
     async (req: Request, res: Response) => {
         try {
             const user: User = await userService.getUser(req.params.id, (req as any).userId, (req as any).user.role_id);
@@ -70,9 +70,7 @@ router.put(
     '/:id',
     [
         authMiddleware,
-        validateUUID('id'),
-        body('role_id').isIn(['09603787-2fca-4e4c-9e6c-7b349232c512']).withMessage('Apenas donos podem atualizar usuários'),
-        validateUUID('role_id', true),
+        validateUUID('id', false, true),
         body('role_id').optional().isIn(allowedRoles).withMessage('Papel inválido: apenas cozinheiro ou garçom'),
         validateUUID('restaurant_id', true),
         body('is_active').optional().isBoolean().withMessage('is_active deve ser booleano'),
@@ -80,6 +78,9 @@ router.put(
     ],
     async (req: Request, res: Response) => {
         try {
+            if ((req as any).user.role_id !== '09603787-2fca-4e4c-9e6c-7b349232c512') {
+                return res.status(403).json({message: 'Apenas donos podem atualizar usuários'});
+            }
             await userService.updateUser(req.params.id, req.body, (req as any).userId);
             res.json({message: 'Usuário atualizado com sucesso'});
         } catch (err: any) {
@@ -90,14 +91,12 @@ router.put(
 
 router.delete(
     '/:id',
-    [
-        authMiddleware,
-        validateUUID('id'),
-        body('role_id').isIn(['09603787-2fca-4e4c-9e6c-7b349232c512']).withMessage('Apenas donos podem excluir usuários'),
-        handleValidationErrors,
-    ],
+    [authMiddleware, validateUUID('id', false, true), handleValidationErrors],
     async (req: Request, res: Response) => {
         try {
+            if ((req as any).user.role_id !== '09603787-2fca-4e4c-9e6c-7b349232c512') {
+                return res.status(403).json({message: 'Apenas donos podem excluir usuários'});
+            }
             await userService.deleteUser(req.params.id, (req as any).userId);
             res.json({message: 'Usuário excluído com sucesso'});
         } catch (err: any) {

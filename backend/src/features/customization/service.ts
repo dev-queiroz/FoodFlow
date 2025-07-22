@@ -59,7 +59,7 @@ export class CustomizationService {
             // Atualizar configuração existente
             result = await supabase
                 .from('restaurant_settings')
-                .update({primary_color, secondary_color, logo_url})
+                .update({primary_color, secondary_color, logo_url, updated_at: new Date()})
                 .eq('restaurant_id', restaurant_id)
                 .select()
                 .single();
@@ -67,7 +67,14 @@ export class CustomizationService {
             // Criar nova configuração
             result = await supabase
                 .from('restaurant_settings')
-                .insert({restaurant_id, primary_color, secondary_color, logo_url})
+                .insert({
+                    restaurant_id,
+                    primary_color,
+                    secondary_color,
+                    logo_url,
+                    created_at: new Date(),
+                    updated_at: new Date()
+                })
                 .select()
                 .single();
         }
@@ -82,7 +89,7 @@ export class CustomizationService {
     async getCustomization(restaurantId: string): Promise<Customization | null> {
         const {data, error} = await supabase
             .from('restaurant_settings')
-            .select('*')
+            .select('id, restaurant_id, primary_color, secondary_color, logo_url, created_at')
             .eq('restaurant_id', restaurantId)
             .single();
 
