@@ -214,11 +214,11 @@
       <div class="container">
         <div class="footer-content">
           <div class="footer-about">
-            <h3>RestaurantPro</h3>
+            <h3>FoodFlow</h3>
             <p>Soluções inteligentes para gestão de restaurantes. Simplificando o dia a dia dos negócios de alimentação.</p>
             <div class="social-links">
               <a href="#" class="social-icon" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-              <a href="#" class="social-icon" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+              <a href="https://www.instagram.com/foodflow.oficial/" class="social-icon" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
               <a href="#" class="social-icon" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
               <a href="#" class="social-icon" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
             </div>
@@ -268,7 +268,7 @@
         </div>
         
         <div class="footer-bottom">
-          <p>&copy; {{ currentYear }} RestaurantPro. Todos os direitos reservados.</p>
+          <p>&copy; {{ currentYear }} FoodFlow. Todos os direitos reservados.</p>
           <div class="footer-legal">
             <a href="#">Termos de Uso</a>
             <span>|</span>
@@ -338,7 +338,7 @@ export default defineComponent({
     const scheduleDemo = () => {
       // Aqui você pode abrir um modal ou redirecionar para uma página de agendamento
       const whatsappNumber = '5511999999999';
-      const message = 'Olá! Gostaria de agendar uma demonstração do RestaurantPro.';
+      const message = 'Olá! Gostaria de agendar uma demonstração do FoodFlow.';
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
     };

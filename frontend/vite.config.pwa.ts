@@ -14,8 +14,8 @@ export default defineConfig({
       srcDir: 'public',
       filename: 'sw.js',
       manifest: {
-        name: 'RestaurantPro - Gestão de Restaurantes',
-        short_name: 'RestaurantPro',
+        name: 'FoodFlow - Gestão de Restaurantes',
+        short_name: 'FoodFlow',
         description: 'Solução completa para gestão de restaurantes',
         theme_color: '#ffffff',
         background_color: '#ffffff',

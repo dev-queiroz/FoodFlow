@@ -8,7 +8,7 @@
         <router-link to="/" class="logo-link">
           <div class="logo">
             <i class="fas fa-utensils logo-icon"></i>
-            <span>RestaurantPro</span>
+            <span>FoodFlow</span>
           </div>
         </router-link>
         <h1 class="auth-title">Bem-vindo de volta!</h1>

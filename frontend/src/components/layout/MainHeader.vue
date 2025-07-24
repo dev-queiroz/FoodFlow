@@ -3,7 +3,7 @@
     <div class="container">
       <div class="logo">
         <span class="logo-icon">🍽️</span>
-        <span class="logo-text">foodflow</span>
+        <span class="logo-text">FoodFlow</span>
       </div>
       <nav class="main-nav">
         <a href="#inicio" class="nav-link" @click.prevent="scrollTo('inicio')">Início</a>

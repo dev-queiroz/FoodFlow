@@ -1,7 +1,7 @@
 // Nomes dos caches
-const CACHE_NAME = 'restaurantpro-v1';
-const OFFLINE_CACHE = 'restaurantpro-offline';
-const ASSETS_CACHE = 'restaurantpro-assets';
+const CACHE_NAME = 'foodflow-v1';
+const OFFLINE_CACHE = 'foodflow-offline';
+const ASSETS_CACHE = 'foodflow-assets';
 
 // Estratégias de cache
 const CACHE_STRATEGY = {
@@ -164,13 +164,13 @@ self.addEventListener('fetch', (event) => {
 
 // Evento: Notificações push
 self.addEventListener('push', (event) => {
-  const title = 'RestaurantPro';
+  const title = 'FoodFlow';
   const options = {
-    body: event.data?.text() || 'Nova notificação do RestaurantPro',
+    body: event.data?.text() || 'Nova notificação do FoodFlow',
     icon: '/assets/icons/pwa-192x192.png',
     badge: '/assets/icons/pwa-192x192.png',
     vibrate: [200, 100, 200, 100, 200, 100, 400],
-    tag: 'restaurantpro-notification'
+    tag: 'foodflow-notification'
   };
 
   event.waitUntil(

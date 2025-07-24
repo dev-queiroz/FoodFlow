@@ -108,8 +108,8 @@ console.log('Favicon gerado');
 
 // Cria o arquivo manifest.json
 const manifest = {
-  "name": "RestaurantPro",
-  "short_name": "RestaurantPro",
+  "name": "FoodFlow",
+  "short_name": "FoodFlow",
   "description": "Solução completa para gestão de restaurantes",
   "start_url": "/",
   "display": "standalone",

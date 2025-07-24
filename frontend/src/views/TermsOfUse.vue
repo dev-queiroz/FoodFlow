@@ -4,7 +4,7 @@
     <section class="terms-content">
       <h2>1. Aceitação dos Termos</h2>
       <p>
-        Ao criar uma conta ou utilizar o sistema RestauraSys, você concorda com estes Termos de Uso. Caso não concorde, por favor, não utilize a plataforma.
+        Ao criar uma conta ou utilizar o sistema FoodFlow, você concorda com estes Termos de Uso. Caso não concorde, por favor, não utilize a plataforma.
       </p>
       <h2>2. Uso da Plataforma</h2>
       <p>
@@ -24,7 +24,7 @@
       </p>
       <h2>6. Contato</h2>
       <p>
-        Em caso de dúvidas, entre em contato pelo e-mail suporte@restaurasys.com.br.
+        Em caso de dúvidas, entre em contato pelo e-mail suporte@foodflow.app.
       </p>
     </section>
   </div>

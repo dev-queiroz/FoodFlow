@@ -1,7 +1,7 @@
 <template>
   <nav class="bg-gray-800 text-white p-4">
     <div class="container mx-auto flex justify-between items-center">
-      <div class="text-xl font-bold">SaaS de Comida</div>
+      <div class="text-xl font-bold">FoodFlow</div>
       <div class="flex space-x-4">
         <router-link 
           to="/" 

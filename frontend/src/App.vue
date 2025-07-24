@@ -1,7 +1,6 @@
 <template>
   <div class="app-container">
-    <!-- Só mostra NavigationBar nas páginas específicas (não auth e não home) -->
-    <NavigationBar v-if="showNavigationBar" />
+
     
     <router-view v-slot="{ Component }">
       <transition name="fade" mode="out-in">
@@ -11,26 +10,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import NavigationBar from './components/NavigationBar.vue'
 
-const route = useRoute()
-
-// Mostra NavigationBar apenas em páginas internas (não auth e não home)
-const showNavigationBar = computed(() => {
-  const path = route.path
-  // Não mostra na home (que tem MainHeader)
-  if (path === '/') return false
-  // Não mostra nas páginas de auth
-  if (path.startsWith('/auth')) return false
-  // Não mostra no dashboard admin
-  if (path === '/dashboard') return false
-  // Mostra nas demais páginas
-  return true
-})
-</script>
 
 <style>
 :root {

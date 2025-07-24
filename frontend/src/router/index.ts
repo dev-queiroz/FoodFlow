@@ -9,6 +9,51 @@ import ForgotPasswordView from '../views/auth/ForgotPasswordView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: () => import('../views/DashboardView.vue')
+  },
+  {
+    path: '/menu',
+    name: 'Menu',
+    component: () => import('../views/MenuView.vue')
+  },
+  {
+    path: '/tables',
+    name: 'Tables',
+    component: () => import('../views/TablesView.vue')
+  },
+  {
+    path: '/waiter',
+    name: 'Waiter',
+    component: () => import('../views/WaiterView.vue')
+  },
+  {
+    path: '/kitchen',
+    name: 'Kitchen',
+    component: () => import('../views/KitchenView.vue')
+  },
+  {
+    path: '/waiter',
+    name: 'Waiter',
+    component: () => import('../views/WaiterView.vue')
+  },
+  {
+    path: '/kitchen',
+    name: 'Kitchen',
+    component: () => import('../views/kitchen/KitchenDashboard.vue')
+  },
+  {
+    path: '/reservations',
+    name: 'Reservations',
+    component: () => import('../views/ReservationsView.vue')
+  },
+  {
+    path: '/orders',
+    name: 'Orders',
+    component: () => import('../views/OrdersView.vue')
+  },
+  {
     path: '/',
     name: 'Home',
     component: HomeView

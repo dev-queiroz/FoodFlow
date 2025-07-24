@@ -20,7 +20,7 @@
       </p>
       <h2>5. Seus Direitos</h2>
       <p>
-        Você pode acessar, corrigir ou excluir seus dados a qualquer momento. Basta entrar em contato pelo e-mail suporte@restaurasys.com.br.
+        Você pode acessar, corrigir ou excluir seus dados a qualquer momento. Basta entrar em contato pelo e-mail suporte@foodflow.app.
       </p>
       <h2>6. Alterações nesta Política</h2>
       <p>

@@ -1,7 +1,7 @@
 // Tipos globais para Service Worker
 declare const self: ServiceWorkerGlobalScope;
 
-const CACHE_NAME = 'restaurantpro-cache-v1';
+const CACHE_NAME = 'foodflow-cache-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

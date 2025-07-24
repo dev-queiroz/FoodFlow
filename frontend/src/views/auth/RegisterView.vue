@@ -8,7 +8,7 @@
         <router-link to="/" class="logo-link">
           <div class="logo">
             <i class="fas fa-utensils logo-icon"></i>
-            <span>RestaurantPro</span>
+            <span>FoodFlow</span>
           </div>
         </router-link>
         <h1 class="auth-title">Crie sua conta</h1>
@@ -402,7 +402,7 @@ export default defineComponent({
         // Simular registro - substituir por chamada real à API
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Notificação removida ('Conta criada com sucesso! Bem-vindo ao RestaurantPro!', 'success');
+        // Notificação removida ('Conta criada com sucesso! Bem-vindo ao FoodFlow!', 'success');
         
         // Salvar dados de autenticação (substituir por implementação real)
         localStorage.setItem('isAuthenticated', 'true');
