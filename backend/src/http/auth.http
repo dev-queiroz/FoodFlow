@@ -1,0 +1,157 @@
+### 1. Register (Criar usuário - Dono)
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "dev.queiroz05@gmail.com",
+  "password": "senha123",
+  "name": "Dono Teste",
+  "role_id": "09603787-2fca-4e4c-9e6c-7b349232c512"
+}
+
+### 2. Register (Criar usuário - Cliente)
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "lewav98546@modirosa.com",
+  "password": "senha123",
+  "name": "Cliente Teste 2",
+  "role_id": "e7256f9b-9f57-4fde-b15e-0bdefb0390f6"
+}
+
+###Espera: 201, { "user": { "id": "...", "email": "cliente@test.com", ... }, "accessToken": "..." }
+# Salve o user_id do cliente em {{user_id}}
+
+### 3. Register (Erro - Email já registrado)
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "dev.queiroz05@gmail.com",
+  "password": "senha123",
+  "name": "Dono Duplicado",
+  "role_id": "09603787-2fca-4e4c-9e6c-7b349232c512"
+}
+
+###Espera: 400, { "message": "Este e-mail já está registrado. Tente fazer login ou redefinir sua senha." }
+
+### 4. Register (Erro - Role inválido)
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "invalido@test.com",
+  "password": "senha123",
+  "name": "Usuário Inválido",
+  "role_id": "invalid_role_id"
+}
+
+###Espera: 400, { "message": "Papel inválido: apenas dono ou cliente podem se cadastrar" }
+
+### 5. Register (Erro - Cliente com restaurant_id)
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "cliente2@test.com",
+  "password": "senha123",
+  "name": "Cliente Inválido",
+  "role_id": "e7256f9b-9f57-4fde-b15e-0bdefb0390f6",
+  "restaurant_id": "some_restaurant_id"
+}
+
+###Espera: 400, { "message": "Clientes não podem ser vinculados a um restaurante no cadastro" }
+
+### 6. Login (Sucesso - Dono)
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "dev.queiroz05@gmail.com",
+  "password": "senha123"
+}
+
+###Espera: 200, { "user": { "id": "...", "email": "dev.queiroz05@gmail.com", ... }, "accessToken": "..." }
+# Salve o token em {{token}}
+
+### 7. Login (Sucesso - Cliente)
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "vinidq18@gmail.com",
+  "password": "senha123"
+}
+
+###Espera: 200, { "user": { "id": "...", "email": "cliente@test.com", ... }, "accessToken": "..." }
+
+### 8. Login (Erro - Credenciais inválidas)
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "dev.queiroz05@gmail.com",
+  "password": "senha_errada"
+}
+
+###Espera: 401, { "message": "Credenciais inválidas" }
+
+### 9. Login (Erro - Usuário inativo)
+# Observação: Desative um usuário no Supabase (is_active: false) antes do teste
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "inativo@test.com",
+  "password": "senha123"
+}
+
+###Espera: 401, { "message": "Usuário inativo" }
+
+### 10. Reset Password
+POST http://localhost:3000/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "kicab15644@modirosa.com"
+}
+
+###Espera: 200, { "message": "E-mail de redefinição enviado" }
+
+### 11. Reset Password (Erro - Email inválido)
+POST http://localhost:3000/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "naoexiste@test.com"
+}
+
+####Espera: 400, { "message": "Erro ao enviar e-mail de redefinição de senha" }
+
+### 12. Logout
+POST http://localhost:3000/auth/logout
+Content-Type: application/json
+
+{}
+
+###Espera: 200, { "message": "Logout realizado com sucesso" }
+
+### 13. Login usuário - Garçom
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+    "email": "oliveiravaldirene746@gmail.com",
+    "password": "nova_senha_123"
+}
+### Salve em {{garcom_token}}
+
+### reset password
+POST http://localhost:3000/reset-rt/reset-password
+Content-Type: application/json
+
+{
+  "id": "53ad31d0-7b3c-4d54-9097-edd100fb63a5",
+  "newPassword": "nova_senha_123"
+}

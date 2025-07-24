@@ -2,8 +2,9 @@ export interface Table {
     id: string;
     restaurant_id: string;
     table_number: number;
-    qr_code: string;
+    qr_code: string | null; // Sincronizado com qr_codes.code
     status: 'available' | 'occupied' | 'reserved';
+    capacity: number;
     created_at: string;
     updated_at: string;
 }
@@ -11,11 +12,13 @@ export interface Table {
 export interface CreateTableDto {
     restaurant_id: string;
     table_number: number;
+    capacity: number;
 }
 
 export interface UpdateTableDto {
     table_number?: number;
     status?: 'available' | 'occupied' | 'reserved';
+    capacity?: number;
 }
 
 export interface ValidateQrCodeDto {

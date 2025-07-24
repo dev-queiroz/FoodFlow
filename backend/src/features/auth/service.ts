@@ -1,23 +1,5 @@
 import {supabase} from '../../config/supabase';
-import {AuthResponse} from './interfaces';
-
-interface LoginDto {
-    email: string;
-    password: string;
-}
-
-interface RegisterDto {
-    email: string;
-    password: string;
-    name: string;
-    role_id: string;
-    restaurant_id?: string;
-}
-
-interface UpdateProfileDto {
-    name?: string;
-    email?: string;
-}
+import {AuthResponse, LoginDto, RegisterDto} from './interfaces';
 
 export class AuthService {
     async login({email, password}: LoginDto): Promise<AuthResponse> {
@@ -51,15 +33,20 @@ export class AuthService {
     }
 
     async register({email, password, name, role_id, restaurant_id}: RegisterDto): Promise<AuthResponse> {
+        const allowedRoles = ['09603787-2fca-4e4c-9e6c-7b349232c512', 'e7256f9b-9f57-4fde-b15e-0bdefb0390f6']; // dono, cliente
         const {data: roleData, error: roleError} = await supabase
             .from('roles')
-            .select('id')
+            .select('id, name')
             .eq('id', role_id)
             .single();
 
-        if (roleError || !roleData) {
+        if (roleError || !roleData || !allowedRoles.includes(roleData.id)) {
             console.error('Erro ao validar role_id:', roleError?.message || 'Papel não encontrado');
-            throw new Error('Papel inválido');
+            throw new Error('Papel inválido: apenas dono ou cliente podem se cadastrar');
+        }
+
+        if (restaurant_id && roleData.name === 'cliente') {
+            throw new Error('Clientes não podem ser vinculados a um restaurante no cadastro');
         }
 
         const {data, error} = await supabase.auth.signUp({
@@ -85,7 +72,7 @@ export class AuthService {
                 email,
                 name,
                 role_id,
-                restaurant_id: restaurant_id || null,
+                restaurant_id: roleData.name === 'dono' ? null : restaurant_id || null,
                 is_active: true,
             });
 
@@ -95,12 +82,23 @@ export class AuthService {
         }
 
         return {
-            user: {id: user!.id, email, name, role_id, restaurant_id, is_active: true},
+            user: {id: user!.id, email, name, role_id, restaurant_id: restaurant_id || undefined, is_active: true},
             accessToken: data.session?.access_token || '',
         };
     }
 
     async resetPassword(email: string): Promise<void> {
+        const {data: userData, error: userError} = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', email)
+            .single();
+
+        if (userError || !userData) {
+            console.error('Erro ao buscar usuário para redefinição de senha:', userError?.message || 'Usuário não encontrado');
+            throw new Error('E-mail não cadastrado');
+        }
+
         const {error} = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: 'http://localhost:3000/reset-password',
         });
@@ -111,22 +109,12 @@ export class AuthService {
         }
     }
 
-    async updateProfile(userId: string, {name, email}: UpdateProfileDto): Promise<void> {
-        const {error} = await supabase
-            .from('users')
-            .update({name, email, updated_at: new Date()})
-            .eq('id', userId);
+    async logout(): Promise<void> {
+        const {error} = await supabase.auth.signOut();
 
         if (error) {
-            console.error('Erro ao atualizar perfil:', error.message);
-            throw new Error(`Erro ao atualizar perfil: ${error.message}`);
-        }
-
-        const {error: authError} = await supabase.auth.updateUser({email, data: {name}});
-
-        if (authError) {
-            console.error('Erro ao atualizar Supabase Auth:', authError.message);
-            throw new Error(`Erro ao atualizar autenticação: ${authError.message}`);
+            console.error('Erro ao fazer logout:', error.message);
+            throw new Error('Erro ao fazer logout');
         }
     }
 }

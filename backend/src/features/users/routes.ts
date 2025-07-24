@@ -1,111 +1,106 @@
 import {Request, Response, Router} from 'express';
 import {body} from 'express-validator';
-import {supabase} from "../../config/supabase";
 import {UserService} from './service';
 import {User} from './interfaces';
 import {authMiddleware} from '../../middleware/auth';
-import {validateIdParam, validateUUID} from '../../utils/validator';
+import {validateText, validateUUID} from '../../utils/validator';
 import {handleValidationErrors} from '../../utils/errorHandler';
 
 const router = Router();
 const userService = new UserService();
 
-// Listar Usuários
-router.get(
-    '/:restaurantId',
-    [validateIdParam().custom(async (value, {req}) => {
-        // Verificar se o usuário autenticado é o dono do restaurante
-        const {data, error} = await supabase
-            .from('restaurants')
-            .select('owner_id')
-            .eq('id', value)
-            .single();
-        if (error || !data || data.owner_id !== (req as any).userId) {
-            throw new Error('Acesso negado: você não é o dono deste restaurante');
-        }
-        return true;
-    })],
-    authMiddleware,
-    handleValidationErrors,
+const allowedRoles = [
+    '1350d40c-a7fb-4b30-850e-4986048a7a3b', // cozinheiro
+    '3f3aed51-f815-40dc-a372-a31de658319f', // garçom
+];
+
+router.post(
+    '/',
+    [
+        authMiddleware,
+        validateText('email'),
+        validateText('name', true),
+        body('role_id').isIn(allowedRoles).withMessage('Papel inválido: apenas cozinheiro ou garçom'),
+        validateUUID('restaurant_id'),
+        handleValidationErrors,
+    ],
     async (req: Request, res: Response) => {
         try {
-            const users: User[] = await userService.listUsers(req.params.restaurantId);
-            res.json(users);
+            if ((req as any).user.role_id !== '09603787-2fca-4e4c-9e6c-7b349232c512') {
+                return res.status(403).json({message: 'Apenas donos podem criar usuários'});
+            }
+            const user: User = await userService.createUser(req.body, (req as any).userId);
+            res.status(201).json(user);
         } catch (err: any) {
-            console.error('Erro ao listar usuários:', err.message);
-            res.status(400).json({message: err.message});
+            throw err;
         }
     }
 );
 
-// Atualizar Usuário
+router.get(
+    '/:restaurantId',
+    [authMiddleware, validateUUID('restaurantId', false, true), handleValidationErrors], // Corrigido para validar params
+    async (req: Request, res: Response) => {
+        try {
+            if ((req as any).user.role_id !== '09603787-2fca-4e4c-9e6c-7b349232c512') {
+                return res.status(403).json({message: 'Apenas donos podem listar usuários'});
+            }
+            const users: User[] = await userService.listUsers(req.params.restaurantId, (req as any).userId);
+            res.json(users);
+        } catch (err: any) {
+            throw err;
+        }
+    }
+);
+
+router.get(
+    '/user/:id',
+    [authMiddleware, validateUUID('id', false, true), handleValidationErrors],
+    async (req: Request, res: Response) => {
+        try {
+            const user: User = await userService.getUser(req.params.id, (req as any).userId, (req as any).user.role_id);
+            res.json(user);
+        } catch (err: any) {
+            throw err;
+        }
+    }
+);
+
 router.put(
     '/:id',
     [
-        validateIdParam(),
-        validateUUID('role_id', true),
+        authMiddleware,
+        validateUUID('id', false, true),
+        body('role_id').optional().isIn(allowedRoles).withMessage('Papel inválido: apenas cozinheiro ou garçom'),
         validateUUID('restaurant_id', true),
         body('is_active').optional().isBoolean().withMessage('is_active deve ser booleano'),
+        handleValidationErrors,
     ],
-    authMiddleware,
-    handleValidationErrors,
     async (req: Request, res: Response) => {
         try {
-            // Verificar se o usuário autenticado é o dono do restaurante associado
-            const {restaurant_id} = req.body;
-            if (restaurant_id) {
-                const {data, error} = await supabase
-                    .from('restaurants')
-                    .select('owner_id')
-                    .eq('id', restaurant_id)
-                    .single();
-                if (error || !data || data.owner_id !== (req as any).userId) {
-                    return res.status(403).json({message: 'Acesso negado: você não é o dono deste restaurante'});
-                }
+            if ((req as any).user.role_id !== '09603787-2fca-4e4c-9e6c-7b349232c512') {
+                return res.status(403).json({message: 'Apenas donos podem atualizar usuários'});
             }
-
-            await userService.updateUser(req.params.id, req.body);
+            await userService.updateUser(req.params.id, req.body, (req as any).userId);
             res.json({message: 'Usuário atualizado com sucesso'});
         } catch (err: any) {
-            console.error('Erro ao atualizar usuário:', err.message);
-            res.status(400).json({message: err.message});
+            throw err;
         }
     }
 );
 
-// Excluir Usuário
 router.delete(
     '/:id',
-    [validateIdParam()],
-    authMiddleware,
-    handleValidationErrors,
+    [authMiddleware, validateUUID('id', false, true), handleValidationErrors],
     async (req: Request, res: Response) => {
         try {
-            // Verificar se o usuário autenticado é o dono do restaurante associado ao usuário
-            const {data, error} = await supabase
-                .from('users')
-                .select('restaurant_id')
-                .eq('id', req.params.id)
-                .single();
-            if (error || !data) {
-                return res.status(404).json({message: 'Usuário não encontrado'});
+            if ((req as any).user.role_id !== '09603787-2fca-4e4c-9e6c-7b349232c512') {
+                return res.status(403).json({message: 'Apenas donos podem excluir usuários'});
             }
-            if (data.restaurant_id) {
-                const {data: restaurant, error: restaurantError} = await supabase
-                    .from('restaurants')
-                    .select('owner_id')
-                    .eq('id', data.restaurant_id)
-                    .single();
-                if (restaurantError || !restaurant || restaurant.owner_id !== (req as any).userId) {
-                    return res.status(403).json({message: 'Acesso negado: você não é o dono deste restaurante'});
-                }
-            }
-
-            await userService.deleteUser(req.params.id);
+            await userService.deleteUser(req.params.id, (req as any).userId);
             res.json({message: 'Usuário excluído com sucesso'});
         } catch (err: any) {
-            console.error('Erro ao excluir usuário:', err.message);
-            res.status(400).json({message: err.message});
+            throw err;
         }
     }
 );
