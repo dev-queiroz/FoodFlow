@@ -75,22 +75,22 @@ export default defineComponent({
           router.push('/reservations');
           break;
         case 'Controle de Estoque':
-          console.log('Controle de Estoque - Em desenvolvimento');
+          router.push('/estoque');
           break;
         case 'Notificações':
-          console.log('Notificações - Em desenvolvimento');
+          router.push('/notifications');
           break;
         case 'Painel de Administração':
-          console.log('Painel de Administração - Em desenvolvimento');
+          router.push('/admin');
           break;
         case 'Feedback dos Clientes':
-          console.log('Feedback dos Clientes - Em desenvolvimento');
+          router.push('/feedback');
           break;
         case 'Personalização':
-          console.log('Personalização - Em desenvolvimento');
+          router.push('/personalizacao');
           break;
         case 'Relatórios':
-          console.log('Relatórios - Em desenvolvimento');
+          router.push('/relatorios');
           break;
         default:
           console.log(`${item} - Em desenvolvimento`);

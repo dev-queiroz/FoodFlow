@@ -24,6 +24,13 @@
         >
           Cozinha
         </router-link>
+        <router-link 
+          to="/notifications" 
+          class="px-3 py-2 rounded hover:bg-gray-700"
+          active-class="bg-gray-700"
+        >
+          Notificações
+        </router-link>
       </div>
     </div>
   </nav>

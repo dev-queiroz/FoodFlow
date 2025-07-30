@@ -54,6 +54,11 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../views/OrdersView.vue')
   },
   {
+    path: '/notifications',
+    name: 'Notifications',
+    component: () => import('../views/NotificationsView.vue')
+  },
+  {
     path: '/',
     name: 'Home',
     component: HomeView
@@ -97,6 +102,31 @@ const routes: Array<RouteRecordRaw> = [
     name: 'PrivacyPolicy',
     component: PrivacyPolicy,
     meta: { public: true }
+  },
+  {
+    path: '/personalizacao',
+    name: 'Personalizacao',
+    component: () => import('../views/PersonalizacaoView.vue')
+  },
+  {
+    path: '/feedback',
+    name: 'Feedback',
+    component: () => import('../views/FeedbackView.vue')
+  },
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: () => import('../views/AdminView.vue')
+  },
+  {
+    path: '/relatorios',
+    name: 'Relatorios',
+    component: () => import('../views/RelatoriosView.vue')
+  },
+  {
+    path: '/estoque',
+    name: 'Estoque',
+    component: () => import('../views/EstoqueView.vue')
   }
 ];
 
