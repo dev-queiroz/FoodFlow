@@ -1,80 +1,133 @@
-login (/)
-register (/)
-resetPassword (/) #funcional quando tiver frontend ()
-logout (/)
+# FoodFlow - Módulo de Pagamentos
 
-createRestaurant (/)
-listRestaurants (/)
-updateRestaurant (/)
-deleteRestaurant (/)
+==================================
+1. OBJETIVO
+==================================
+- Cobrar mensalidade de R$120/mês por restaurante.
+- Tolerância de 3 dias após vencimento.
+- Bloqueio se passar dos 3 dias.
+- Remoção após 30 dias sem pagar.
+- Execução automática com CRON.
 
-createUser (/)
-listUsers (/)
-getUser (/)
-updateUser (/)
-deleteUser (/)
+==================================
+2. ESTRUTURA DE DADOS (Supabase)
+==================================
+Tabela: subscriptions
 
-createTable (/)
-listTables (/)
-updateTable (/)
-deleteTable (/)
-validateQrCode (/)
-closeSession (/)
+CREATE TABLE subscriptions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    restaurant_id uuid REFERENCES restaurants(id),
+    status text CHECK (status IN ('active', 'grace', 'blocked', 'deleted')),
+    start_date date NOT NULL,
+    due_date date NOT NULL,
+    last_payment date,
+    created_at timestamp DEFAULT now()
+);
 
-createOrUpdateCustomization (/)
-getCustomization (/)
-deleteCustomization (/)
+# Status possíveis:
+- active  → pagamento em dia
+- grace   → até 3 dias de tolerância
+- blocked → mais de 3 dias sem pagar
+- deleted → removido após 30 dias sem pagar
 
-createFeedback ()
-listFeedback ()
-updateFeedback ()
-deleteFeedback ()
-createItem ()
-listItems ()
-updateItem ()
-deleteItem ()
-createIngredientUsage ()
-createMenuItem ()
-listMenuItems ()
-updateMenuItem ()
-deleteMenuItem ()
-createMenuCategory ()
-updateMenuCategory ()
-deleteMenuCategory ()
-createMenuItem ()
-listMenuItems ()
-updateMenuItem ()
-deleteMenuItem ()
-createNotification ()
-listNotifications ()
-markNotificationAsRead ()
-createOrder ()
-listOrders ()
-getOrder ()
-listOrderItems ()
-updateOrder ()
-cancelOrder ()
-listQRCodes ()
-downloadQRCode ()
-deleteQRCode ()
-generateSalesReport ()
-generateOccupancyReport ()
-generateSessionReport ()
-generateInventoryReport ()
-generateSalesReportPDF ()
-generateOccupancyReportPDF ()
-generateSessionReportPDF ()
-generateInventoryReportPDF ()
-generateSalesReportCSV ()
-generateOccupancyReportCSV ()
-generateSessionReportCSV ()
-generateInventoryReportCSV ()
-checkReservationConflict ()
-createReservation ()
-listReservations ()
-updateReservation ()
-deleteReservation ()
-createSession ()
-listSessions ()
-updateSession ()
-deleteSession ()
+==================================
+3. SERVICES (paymentService.js)
+==================================
+
+import { supabase } from '../utils/supabaseClient.js';
+
+export async function registerSubscription(restaurantId) {
+    const startDate = new Date();
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30);
+
+    const { data, error } = await supabase
+        .from('subscriptions')
+        .insert([{ restaurant_id: restaurantId, start_date: startDate, due_date: dueDate, status: 'active' }])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function markAsPaid(subscriptionId) {
+    const newDueDate = new Date();
+    newDueDate.setDate(newDueDate.getDate() + 30);
+
+    const { data, error } = await supabase
+        .from('subscriptions')
+        .update({ last_payment: new Date(), due_date: newDueDate, status: 'active' })
+        .eq('id', subscriptionId)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function checkSubscriptions() {
+    const today = new Date();
+
+    const { data: subs, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .in('status', ['active', 'grace', 'blocked']);
+
+    if (error) throw error;
+
+    for (const sub of subs) {
+        const dueDate = new Date(sub.due_date);
+        const diffDays = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
+
+        if (diffDays <= 0) continue; // Ainda em dia
+        if (diffDays <= 3 && sub.status !== 'grace') {
+            await supabase.from('subscriptions').update({ status: 'grace' }).eq('id', sub.id);
+        } else if (diffDays > 3 && diffDays <= 30 && sub.status !== 'blocked') {
+            await supabase.from('subscriptions').update({ status: 'blocked' }).eq('id', sub.id);
+        } else if (diffDays > 30) {
+            await supabase.from('subscriptions').update({ status: 'deleted' }).eq('id', sub.id);
+            await deleteRestaurant(sub.restaurant_id);
+        }
+    }
+}
+
+async function deleteRestaurant(restaurantId) {
+    await supabase.from('restaurants').delete().eq('id', restaurantId);
+    // Supabase ON DELETE CASCADE deve cuidar das tabelas relacionadas
+}
+
+==================================
+4. CRON JOB (paymentCron.js)
+==================================
+
+import cron from 'node-cron';
+import { checkSubscriptions } from './services/paymentService.js';
+
+cron.schedule('0 3 * * *', async () => {
+    console.log('🔄 Verificando assinaturas...');
+    await checkSubscriptions();
+});
+
+==================================
+5. FLUXO OPERACIONAL
+==================================
+1. Cadastro de restaurante cria assinatura → registerSubscription().
+2. Dono paga manualmente → markAsPaid().
+3. Cron diário roda checkSubscriptions().
+4. Sistema consulta status:
+   - active / grace → normal
+   - blocked → acesso bloqueado
+   - deleted → dados removidos
+
+==================================
+6. PONTOS DE ATENÇÃO
+==================================
+- Pagamentos ainda sem automação (entrada manual).
+- Usar ON DELETE CASCADE no Supabase para manter integridade.
+- Apenas dono/admin pode marcar pagamentos.
+
+==================================
+7. O QUE TEMOS?
+==================================
+- Vide "./backend/DOC.md"
